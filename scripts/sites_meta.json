@@ -1,0 +1,136 @@
+{
+ "source": "NASA/JPL Horizons API (DE441), observer coord@301, airless apparent Az/El",
+ "startUtc": "2026-11-01T00:00:00Z",
+ "stepHours": 1,
+ "hours": 8784,
+ "ephemerisFile": "/data/ephemeris_2026-11_2027-11.bin.gz",
+ "note": "Efemérides en binario (ver src/lib/ephemeris.ts). horizonProfileDeg calculado del DEM LOLA con scripts/compute_horizons.mts.",
+ "sites": [
+  {
+   "id": "shackleton_rim",
+   "name": "Shackleton Crater Rim (polo)",
+   "mission": "Artemis III (candidata)",
+   "region": "south_pole",
+   "lat": -89.976,
+   "lon": 43.21,
+   "panelType": "vertical",
+   "description": "Borde de Shackleton junto al polo sur: punto óptimo según LOLA (~70 % de Sol anual). La coordenada original (−89,9°, 0°) caía en la pared interior: solo 25 % de Sol.",
+   "ephemOrigin": {
+    "lat": -89.9,
+    "lon": 0.0
+   }
+  },
+  {
+   "id": "mons_mouton",
+   "name": "Mons Mouton",
+   "mission": "CLPS / VIPER (objetivo)",
+   "region": "south_pole",
+   "lat": -84.467,
+   "lon": 29.97,
+   "panelType": "vertical",
+   "description": "Meseta Mons Mouton (objetivo de rovers buscadores de hielo); punto más iluminado de la meseta según LOLA.",
+   "ephemOrigin": {
+    "lat": -84.6,
+    "lon": 31.0
+   }
+  },
+  {
+   "id": "malapert_massif",
+   "name": "Malapert Massif",
+   "mission": "Artemis III (candidata)",
+   "region": "south_pole",
+   "lat": -86.03,
+   "lon": 2.38,
+   "panelType": "vertical",
+   "description": "Cima del macizo Malapert (~5 km de altura) orientada a la Tierra: ~75 % de Sol anual según LOLA.",
+   "ephemOrigin": {
+    "lat": -86.0,
+    "lon": 0.0
+   }
+  },
+  {
+   "id": "nobile_rim",
+   "name": "Nobile Crater Rim",
+   "mission": "Artemis III (candidata)",
+   "region": "south_pole",
+   "lat": -85.2,
+   "lon": 53.5,
+   "panelType": "vertical",
+   "description": "Borde del cráter Nobile con paredes empinadas que bloquean el horizonte.",
+   "ephemOrigin": {
+    "lat": -85.2,
+    "lon": 53.5
+   }
+  },
+  {
+   "id": "im1_odysseus",
+   "name": "Malapert A (IM-1 Odysseus)",
+   "mission": "CLPS IM-1 (2024)",
+   "region": "south_pole",
+   "lat": -80.13,
+   "lon": 1.44,
+   "panelType": "vertical",
+   "description": "Sitio de alunizaje de Odysseus de Intuitive Machines, primer lander comercial en el polo sur.",
+   "ephemOrigin": {
+    "lat": -80.13,
+    "lon": 1.44
+   }
+  },
+  {
+   "id": "apollo_11",
+   "name": "Apollo 11 – Mare Tranquillitatis",
+   "mission": "Apollo 11 (1969)",
+   "region": "equatorial",
+   "lat": 0.674,
+   "lon": 23.473,
+   "panelType": "horizontal",
+   "description": "Línea base ecuatorial: ~14 días de luz y ~14 días de noche; Tierra casi fija y alta en el cielo.",
+   "ephemOrigin": {
+    "lat": 0.674,
+    "lon": 23.473
+   }
+  },
+  {
+   "id": "apollo_15",
+   "name": "Apollo 15 – Hadley Rille",
+   "mission": "Apollo 15 (1971)",
+   "region": "equatorial",
+   "lat": 26.132,
+   "lon": 3.633,
+   "panelType": "horizontal",
+   "description": "Rodeado por los montes Apeninos: relieve alto hacia el este.",
+   "ephemOrigin": {
+    "lat": 26.132,
+    "lon": 3.633
+   }
+  },
+  {
+   "id": "mare_crisium",
+   "name": "Mare Crisium (Blue Ghost M1)",
+   "mission": "CLPS Firefly Blue Ghost (2025)",
+   "region": "equatorial",
+   "lat": 18.56,
+   "lon": 61.81,
+   "panelType": "horizontal",
+   "description": "Sitio de Blue Ghost Mission 1, cerca del limbo este visto desde la Tierra.",
+   "ephemOrigin": {
+    "lat": 18.56,
+    "lon": 61.81
+   }
+  },
+  {
+   "id": "von_karman",
+   "name": "Von Kármán (Chang'e 4)",
+   "mission": "CNSA Chang'e 4 (2019)",
+   "region": "far_side",
+   "lat": -45.44,
+   "lon": 177.59,
+   "panelType": "horizontal",
+   "description": "Cara oculta: la Tierra nunca es visible. Requiere satélite relé.",
+   "ephemOrigin": {
+    "lat": -45.44,
+    "lon": 177.59
+   }
+  }
+ ]
+}
