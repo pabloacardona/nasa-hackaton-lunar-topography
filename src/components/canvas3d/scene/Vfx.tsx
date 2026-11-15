@@ -12,7 +12,7 @@ import type { HourSample } from "@/lib/types";
 import { azElToVec3 } from "@/lib/lunarMath";
 import { texPaths, useSrgbTexture } from "../textures";
 import { getPlayhead, newFrameSample, sampleTimeline } from "./frame";
-import { TERRAIN_R } from "./LunarTerrain";
+import { TERRAIN_R, writeHit, type HitUniforms } from "./LunarTerrain";
 import { SKY_R } from "./CelestialBodies";
 
 // ------------------------------------------------------------ Rayos (Tierra y Sol)
@@ -58,7 +58,7 @@ type BeamKind = "earth" | "sun";
  * Rayo genérico. Tierra: sale de la antena hacia la Tierra (verde / violeta degradado / rojo bloqueado).
  * Sol: llega desde el Sol al panel (amarillo intenso con mucha potencia, ámbar con poca, rojo si una montaña lo tapa).
  */
-export function Beam({ timeline, kind, anchor }: { timeline: HourSample[]; kind: BeamKind; anchor: THREE.Vector3 }) {
+export function Beam({ timeline, kind, anchor, hits }: { timeline: HourSample[]; kind: BeamKind; anchor: THREE.Vector3; hits: HitUniforms }) {
   const group = useRef<THREE.Group>(null);
   const sparks = useRef<THREE.Group>(null);
   const flare = useRef<THREE.Sprite>(null);
@@ -105,6 +105,7 @@ export function Beam({ timeline, kind, anchor }: { timeline: HourSample[]; kind:
     p.uStart.value.copy(anchor);
     p.uEnd.value.copy(v.end);
     p.uColor.value.copy(v.c);
+    writeHit(hits, kind === "earth" ? "A" : "B", v.end, visible ? 0 : 1, dt, u.uTime.value);
     if (sparks.current) {
       sparks.current.visible = !visible;
       sparks.current.position.copy(v.end);
@@ -113,7 +114,7 @@ export function Beam({ timeline, kind, anchor }: { timeline: HourSample[]; kind:
       flare.current.position.copy(visible ? anchor : v.end);
       (flare.current.material as THREE.SpriteMaterial).color.copy(v.c);
       const k = 0.9 + Math.sin(u.uTime.value * 6) * 0.15;
-      flare.current.scale.setScalar((visible ? 1.1 : 2.2) * k);
+      flare.current.scale.setScalar((visible ? 1.1 : 4.2) * k);
     }
   });
 

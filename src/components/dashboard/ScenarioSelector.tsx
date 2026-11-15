@@ -1,12 +1,16 @@
 "use client";
 import { useState } from "react";
-import { Box, Copy, Plus, Rocket, Satellite, X } from "lucide-react";
+import { Box, Clapperboard, Compass, Copy, FileText, Plus, Rocket, Satellite, Settings, Square, X } from "lucide-react";
 import { effectiveStart, useMissionStore } from "@/store/useMissionStore";
 import { SCENARIO_COLORS, type Scenario } from "@/lib/types";
 import { MISSION_PROFILES } from "@/lib/lunarMath";
 import { useGfxStore, useTier } from "@/store/useGfxStore";
 import { useT } from "@/lib/i18n";
 import InfoTip from "@/components/ui/InfoTip";
+import Collapsible from "@/components/ui/Collapsible";
+import { useUiStore } from "@/store/useUiStore";
+import { generateMissionBrief } from "@/lib/brief";
+import { cancelDemo, runNarratedDemo } from "@/lib/demo";
 
 function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
   const t = useT();
@@ -23,7 +27,7 @@ function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
   return (
     <div
       onClick={() => setActive(sc.label)}
-      className={`min-w-[260px] flex-1 rounded-xl border bg-slate-900/70 p-3 text-sm transition ${active ? "ring-2 ring-offset-1 ring-offset-slate-950" : ""}`}
+      className={`min-w-[260px] flex-1 rounded-2xl border-2 bg-slate-900/70 p-3 text-sm transition ${active ? "ring-2 ring-offset-1 ring-offset-slate-950" : ""}`}
       style={{ borderColor: color + "99", ...(active ? { boxShadow: `0 0 0 2px ${color}` } : {}) }}
     >
       <div className="mb-2 flex items-center justify-between gap-1">
@@ -31,12 +35,12 @@ function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} />
           {t("scenario")} {sc.label}
           {active && <span className="ml-1 text-[10px] text-slate-400">({t("active")})</span>}
-          {sc.loading && <span className="ml-2 text-xs text-amber-300">…</span>}
+          {sc.loading && <span className="ml-2 text-xs text-[#dcc08f]">…</span>}
         </span>
         <span className="flex items-center gap-1">
           <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase text-slate-400">{src}</span>
           <button title="Ver en 3D" aria-pressed={in3d} aria-label={`Mostrar ${sc.label} en 3D`} onClick={(e) => { e.stopPropagation(); toggleView3d(sc.label); }}
-            className={`rounded p-1 ${in3d ? "bg-sky-700 text-white" : "bg-slate-800 text-slate-400"}`}>
+            className={`rounded p-1 ${in3d ? "bg-[#3a5a7a] text-white" : "bg-slate-800 text-slate-400"}`}>
             <Box className="h-3 w-3" />
           </button>
           {count < 4 && (
@@ -45,7 +49,7 @@ function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
             </button>
           )}
           {count > 1 && (
-            <button title={t("remove")} aria-label={`${t("remove")} ${sc.label}`} onClick={(e) => { e.stopPropagation(); removeScenario(sc.label); }} className="rounded bg-slate-800 p-1 text-slate-300 hover:bg-red-800">
+            <button title={t("remove")} aria-label={`${t("remove")} ${sc.label}`} onClick={(e) => { e.stopPropagation(); removeScenario(sc.label); }} className="rounded bg-slate-800 p-1 text-slate-300 hover:bg-[#6e3d41]">
               <X className="h-3 w-3" />
             </button>
           )}
@@ -81,18 +85,18 @@ function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1 text-xs text-slate-400">{t("delay")}: {sc.delayDays} {t("days")} <InfoTip k="delay" /></span>
           <div className="flex gap-1">
-            <button className="rounded bg-amber-600/80 px-2 py-1 hover:bg-amber-500" onClick={() => addDelay(sc.label, 7)}>+7d</button>
-            <button className="rounded bg-amber-600/80 px-2 py-1 hover:bg-amber-500" onClick={() => addDelay(sc.label, 14)}>+14d</button>
+            <button className="rounded bg-[#9e7c4c]/80 px-2 py-1 hover:bg-[#b8925a]" onClick={() => addDelay(sc.label, 7)}>+7d</button>
+            <button className="rounded bg-[#9e7c4c]/80 px-2 py-1 hover:bg-[#b8925a]" onClick={() => addDelay(sc.label, 14)}>+14d</button>
             <button className="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600" onClick={() => setDelay(sc.label, 0)}>0</button>
           </div>
         </div>
       </div>
       <input type="range" min={0} max={180} value={sc.delayDays} onChange={(e) => setDelay(sc.label, Number(e.target.value))}
-        className="mt-1 w-full accent-amber-500" aria-label={`${t("delay")} ${sc.label}`} />
+        className="mt-1 w-full accent-[#b8925a]" aria-label={`${t("delay")} ${sc.label}`} />
       <p className="text-[11px] text-slate-400">
         <InfoTip k="horizonSource" /> {t("effectiveLanding")}: {effectiveStart(sc).slice(0, 16).replace("T", " ")} UTC · {sc.lat.toFixed(3)}°, {sc.lon.toFixed(2)}°
       </p>
-      {sc.error && <p className="mt-1 text-xs text-red-400">{sc.error}</p>}
+      {sc.error && <p className="mt-1 text-xs text-[#c98486]">{sc.error}</p>}
     </div>
   );
 }
@@ -104,65 +108,93 @@ export default function ScenarioSelector() {
   const power = useMissionStore((s) => s.power);
   const missionHours = useMissionStore((s) => s.missionHours);
   const lang = useMissionStore((s) => s.lang);
+  const es = lang === "es";
+  const kid = audienceMode === "educator";
   const { setAudienceMode, setPower, setMissionHours, addScenario, setLang } = useMissionStore.getState();
   const qualityPref = useGfxStore((s) => s.pref);
   const vfx = useGfxStore((s) => s.vfx);
   const tier = useTier();
   const { setPref, setVfx } = useGfxStore.getState();
+  const demoRunning = useUiStore((s) => s.demoRunning);
+  const { setTourStep, openBrief } = useUiStore.getState();
+  const sel = "rounded-lg bg-slate-800 px-2 py-1.5";
 
   return (
-    <header className="flex flex-col gap-2" id="tour-scenarios">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="flex items-center gap-2 text-lg font-bold tracking-wider text-slate-100">
-          <Rocket className="h-5 w-5 text-sky-400" aria-hidden /> LUNAR MISSION NAVIGATOR
-          <span className="text-xs font-normal text-slate-400">{t("appSubtitle")}</span>
-        </h1>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <InfoTip k="missionProfile" />
-          <select className="rounded bg-slate-800 px-2 py-1" value={missionHours} onChange={(e) => setMissionHours(Number(e.target.value))} aria-label="Perfil de misión">
-            {MISSION_PROFILES.map((p) => (
-              <option key={p.hours} value={p.hours}>{lang === "es" ? p.label : p.labelEn}</option>
-            ))}
-          </select>
-          <label className="flex items-center gap-1">
-            <Satellite className="h-4 w-4" aria-hidden /> {t("battery")}
-            <select className="rounded bg-slate-800 px-2 py-1" value={power.batteryHours} onChange={(e) => setPower({ batteryHours: Number(e.target.value) })}>
-              {[12, 24, 48, 72, 120].map((h) => (
-                <option key={h} value={h}>{h} h</option>
-              ))}
-            </select>
-          </label>
-          <select className="rounded bg-slate-800 px-2 py-1" value={qualityPref} onChange={(e) => setPref(e.target.value as typeof qualityPref)} aria-label={t("quality")}>
-            <option value="auto">{t("quality")}: Auto ({tier === "high" ? "HD" : "lite"})</option>
-            <option value="high">{t("quality")}: HD</option>
-            <option value="low">{t("quality")}: Lite</option>
-          </select>
-          <label className="flex items-center gap-1">
-            <input type="checkbox" checked={vfx} onChange={(e) => setVfx(e.target.checked)} /> VFX
-          </label>
-          <div className="flex overflow-hidden rounded border border-slate-600" role="group" aria-label="Modo">
-            {(["engineer", "educator"] as const).map((m) => (
-              <button key={m} onClick={() => setAudienceMode(m)} aria-pressed={audienceMode === m}
-                className={`px-2 py-1 ${audienceMode === m ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300"}`}>
-                {m === "engineer" ? t("engineer") : t("educator")}
+    <header className="flex flex-col gap-3" id="tour-scenarios">
+      <div className="card flex flex-wrap items-center gap-3 bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-[#2a2238]/70 px-4 py-3">
+        <Rocket className="floaty h-9 w-9 text-[#c4d6e6]" aria-hidden />
+        <div>
+          <h1 className="font-display text-2xl font-extrabold leading-none tracking-wide text-white">Lunar Mission Navigator</h1>
+          <p className="text-sm font-semibold text-[#c4d6e6]">{kid ? (es ? "¡Encuentra el mejor lugar para alunizar! " : "Find the best place to land on the Moon! ") : t("appSubtitle")}</p>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2 text-xs">
+          <button type="button" onClick={() => setTourStep(0)} title={es ? "Recorrido guiado por la página" : "Guided tour of the page"} className="btn-fun border-[#6f93b5] bg-[#4f7396] hover:bg-[#5b82aa]"><Compass className="h-4 w-4" aria-hidden /> {es ? "Enséñame" : "Show me"}</button>
+          {demoRunning ? (
+            <button type="button" onClick={cancelDemo} title={es ? "Detener la demo" : "Stop the demo"} className="btn-fun border-[#b86b6e] bg-[#884a4e] hover:bg-[#9a5559]"><Square className="h-4 w-4" aria-hidden /> {es ? "Detener" : "Stop"}</button>
+          ) : (
+            <button type="button" onClick={() => void runNarratedDemo()} title={es ? "Demo narrada de 1 minuto con voz" : "1-minute narrated demo with voice"} className="btn-fun"><Clapperboard className="h-4 w-4" aria-hidden /> Demo</button>
+          )}
+          <button type="button" onClick={() => openBrief(generateMissionBrief())} title={es ? "Resumen de la misión, listo para copiar" : "Mission summary, ready to copy"} className="btn-fun"><FileText className="h-4 w-4" aria-hidden /> {es ? "Informe" : "Report"}</button>
+          <div className="flex overflow-hidden rounded-full border-2 border-slate-600" role="group" aria-label={es ? "Nivel de detalle" : "Detail level"}>
+            {(["educator", "engineer"] as const).map((m) => (
+              <button key={m} onClick={() => setAudienceMode(m)} aria-pressed={audienceMode === m} title={m === "educator" ? (es ? "Lenguaje sencillo" : "Simple language") : (es ? "Todos los datos técnicos" : "All technical data")}
+                className={`px-3 py-1.5 font-bold ${audienceMode === m ? (m === "educator" ? "bg-[#7fb39a] text-black" : "bg-[#4f7396] text-white") : "bg-slate-800 text-slate-300"}`}>
+                {m === "educator" ? (es ? " Explorador" : " Explorer") : (es ? " Ingeniero" : " Engineer")}
               </button>
             ))}
           </div>
-          <button onClick={() => setLang(lang === "es" ? "en" : "es")} className="rounded border border-slate-600 bg-slate-800 px-2 py-1 font-semibold" aria-label="Idioma / Language">
-            {lang === "es" ? "EN" : "ES"}
+          <button onClick={() => setLang(es ? "en" : "es")} className="rounded-full border-2 border-slate-600 bg-slate-800 px-3 py-1.5 font-bold" aria-label="Idioma / Language">
+            {es ? "EN" : "ES"}
           </button>
+          <details className="relative">
+            <summary className="flex cursor-pointer list-none items-center gap-1 rounded-full border-2 border-slate-600 bg-slate-800 px-3 py-1.5 font-bold"><Settings className="h-4 w-4" /> {es ? "Ajustes" : "Settings"}</summary>
+            <div className="card pop absolute right-0 z-40 mt-2 flex w-72 flex-col gap-2 p-3 shadow-2xl">
+              <label className="flex flex-col gap-1">
+                <span className="flex items-center gap-1 text-slate-300">{es ? "Tipo de misión" : "Mission type"} <InfoTip k="missionProfile" /></span>
+                <select className={sel} value={missionHours} onChange={(e) => setMissionHours(Number(e.target.value))}>
+                  {MISSION_PROFILES.map((p) => (
+                    <option key={p.hours} value={p.hours}>{es ? p.label : p.labelEn}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="flex items-center gap-1 text-slate-300"><Satellite className="h-4 w-4" aria-hidden /> {es ? "Batería: horas sin Sol que aguanta" : "Battery: hours it lasts without Sun"}</span>
+                <select className={sel} value={power.batteryHours} onChange={(e) => setPower({ batteryHours: Number(e.target.value) })}>
+                  {[12, 24, 48, 72, 120].map((h) => (
+                    <option key={h} value={h}>{h} h</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-slate-300">{es ? "Calidad de los gráficos 3D" : "3D graphics quality"}</span>
+                <select className={sel} value={qualityPref} onChange={(e) => setPref(e.target.value as typeof qualityPref)}>
+                  <option value="auto">Auto ({tier === "high" ? "HD" : "lite"})</option>
+                  <option value="high">HD</option>
+                  <option value="low">{es ? "Lite (más rápido)" : "Lite (faster)"}</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-slate-300">
+                <input type="checkbox" checked={vfx} onChange={(e) => setVfx(e.target.checked)} /> {es ? "Efectos (rayos, brillo, polvo)" : "Effects (beams, glow, dust)"}
+              </label>
+            </div>
+          </details>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {scenarios.map((sc) => (
-          <ScenarioCard key={sc.label} sc={sc} count={scenarios.length} />
-        ))}
-        {scenarios.length < 4 && (
-          <button onClick={() => addScenario()} className="flex min-w-[120px] items-center justify-center gap-1 rounded-xl border border-dashed border-slate-600 text-sm text-slate-300 hover:bg-slate-900">
-            <Plus className="h-4 w-4" /> {t("addScenario")}
-          </button>
-        )}
-      </div>
+      <Collapsible id="sec-scenarios" emoji="" tint="#9d8fc2" title={kid ? (es ? "Mis lugares para comparar" : "My places to compare") : (es ? "Escenarios: sitio, fecha y retraso" : "Scenarios: site, date and delay")}
+        summary={scenarios.map((sc) => (
+          <span key={sc.label} className="rounded-full bg-slate-800 px-2 py-0.5"><b style={{ color: SCENARIO_COLORS[sc.label] }}>{sc.label}</b> {sc.siteName}</span>
+        ))}>
+        <div className="flex flex-wrap gap-2">
+          {scenarios.map((sc) => (
+            <ScenarioCard key={sc.label} sc={sc} count={scenarios.length} />
+          ))}
+          {scenarios.length < 4 && (
+            <button onClick={() => addScenario()} className="flex min-h-[90px] min-w-[140px] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-[#9d8fc2]/70 text-sm font-bold text-[#cfc3e3] hover:bg-violet-950/50">
+              <Plus className="h-6 w-6" /> {es ? "Añadir lugar" : "Add place"}
+            </button>
+          )}
+        </div>
+      </Collapsible>
     </header>
   );
 }

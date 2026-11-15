@@ -14,7 +14,7 @@ export const GLOSSARY = {
   verdict: {
     title: ["Veredicto de la misión", "Mission verdict"],
     what: ["Semáforo que resume si el sitio y la fecha sirven para la misión completa.", "Traffic light summarising whether the site and date work for the whole mission."],
-    how: ["🔴 Riesgo: no hay Sol al alunizar o la batería llega a 0 %. 🟡 Relé: hay energía, pero la Tierra no se ve al alunizar o se ve menos del 50 % del tiempo. 🟢 Viable: lo demás. Se evalúa solo durante la duración de la misión elegida.", "🔴 Risk: no Sun at landing or battery hits 0%. 🟡 Relay: power is fine but Earth is hidden at landing or visible <50% of the time. 🟢 Viable: otherwise. Evaluated only over the selected mission duration."],
+    how: [" Riesgo: no hay Sol al alunizar o la batería llega a 0 %.  Relé: hay energía, pero la Tierra no se ve al alunizar o se ve menos del 50 % del tiempo.  Viable: lo demás. Se evalúa solo durante la duración de la misión elegida.", " Risk: no Sun at landing or battery hits 0%.  Relay: power is fine but Earth is hidden at landing or visible <50% of the time.  Viable: otherwise. Evaluated only over the selected mission duration."],
     why: ["Es la respuesta rápida a «¿podemos aterrizar aquí ese día?».", "The quick answer to “can we land here that day?”."],
     use: ["Si sale rojo, prueba otra fecha (heatmap de estaciones) o un punto cercano (panal de abeja).", "If red, try another date (seasons heatmap) or a nearby point (honeycomb)."],
   },
@@ -91,7 +91,7 @@ export const GLOSSARY = {
   aptitude: {
     title: ["Aptitud de aterrizaje", "Landing suitability"],
     what: ["Índice de 0 a 100 que resume qué tan buen lugar es una celda para aterrizar ese día. No es una probabilidad estadística, es un puntaje comparativo.", "0–100 index of how good a cell is for landing that day. Not a statistical probability, a comparative score."],
-    how: ["Base según el veredicto (🟢 60, 🟡 30, 🔴 0) + 0,3 × ventana dorada % + 0,1 × batería mínima %.", "Base from the verdict (🟢 60, 🟡 30, 🔴 0) + 0.3 × golden window % + 0.1 × minimum battery %."],
+    how: ["Base según el veredicto ( 60,  30,  0) + 0,3 × ventana dorada % + 0,1 × batería mínima %.", "Base from the verdict ( 60,  30,  0) + 0.3 × golden window % + 0.1 × minimum battery %."],
     why: ["Permite elegir de un vistazo la mejor zona entre decenas de puntos cercanos.", "Lets you pick the best spot among dozens of nearby points at a glance."],
     use: ["Busca las celdas verdes con número alto; clic en una para moverle tu escenario.", "Look for green cells with high numbers; click one to move your scenario there."],
   },
@@ -114,7 +114,7 @@ export const GLOSSARY = {
     what: ["30 días desde el alunizaje: barras de Sol, Tierra y ambos a la vez.", "30 days from landing: bars for Sun, Earth and both."],
     how: ["Cada barra es una hora con el astro visible. La zona oscura queda fuera de la duración de la misión.", "Each bar is an hour with the body visible. The dark area is beyond the mission duration."],
     why: ["Muestra cuándo empiezan y terminan las ventanas de energía y comunicación.", "Shows when power and communication windows start and end."],
-    use: ["Arrastra el control o pulsa ▶ para animar; los botones saltan al próximo ocaso o pérdida de la Tierra.", "Drag the slider or press ▶ to animate; buttons jump to the next sunset or Earthset."],
+    use: ["Arrastra el control o pulsa Reproducir para animar; los botones saltan al próximo ocaso o pérdida de la Tierra.", "Drag the slider or press  to animate; buttons jump to the next sunset or Earthset."],
   },
   seasons: {
     title: ["Días lunares y estaciones", "Lunar days & seasons"],

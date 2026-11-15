@@ -5,9 +5,8 @@
 //  - Acciones sobre la UI con tarjetas en el chat, confirmación humana y sugerencias dinámicas.
 //  - Voz: Web Speech API (gratis) -> chat; respuesta del asistente -> síntesis de voz.
 // ============================================================================
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useCopilotAction, useCopilotChatInternal, useCopilotChatSuggestions, useCopilotReadable } from "@copilotkit/react-core";
-import { Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { effectiveStart, useMissionStore, type EventType } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
 import type { Scenario, ScenarioLabel } from "@/lib/types";
@@ -17,6 +16,10 @@ import { exploreAt } from "@/lib/explore";
 import { generateMissionBrief } from "@/lib/brief";
 import { runNarratedDemo } from "@/lib/demo";
 import { ApprovalCard, ScenarioCompareCard, WindowsCard } from "./ChatCards";
+import { GLOSSARY } from "@/lib/glossary";
+
+// Glosario compacto para que el LLM pueda explicar cualquier cálculo de la herramienta
+const TOOL_GLOSSARY = Object.fromEntries(Object.entries(GLOSSARY).map(([k, e]) => [k, { titulo: e.title[0], que: e.what[0], calculo: e.how[0], uso: e.use[0] }]));
 
 function summary(sc: Scenario, hour: number) {
   const h = sc.timeline[hour];
@@ -27,7 +30,6 @@ function summary(sc: Scenario, hour: number) {
   };
 }
 
-type SR = { lang: string; interimResults: boolean; start: () => void; stop: () => void; onresult: ((e: { results: { 0: { transcript: string } }[] }) => void) | null; onend: (() => void) | null };
 const LABELS = ["A", "B", "C", "D"];
 const store = () => useMissionStore.getState();
 const labelsOf = (scenario: string): ScenarioLabel[] =>
@@ -57,6 +59,7 @@ export default function MissionVoiceAgent() {
     },
   });
   useCopilotReadable({ description: "Sitios curados disponibles (usa su id en las acciones)", value: sites });
+  useCopilotReadable({ description: "toolGlossary: explicación de cada métrica y sección de la herramienta (qué es, cómo se calcula, cómo usarla). Interfaz: 1) globo lunar con panal de abeja al hacer clic y señal de alunizaje viable, 2) vistas 3D con barra de tiempo debajo y rayos (verde/violeta/rojo Tierra; ámbar/blanco/rojo Sol), 3) estadísticas en desplegables.", value: TOOL_GLOSSARY });
   useCopilotReadable({
     description: "Resultado del último análisis de panal de abeja (puntos cercanos)",
     value: honey ? { center: honey.center, spacingKm: honey.spacingKm, cells: honey.results.length,
@@ -269,11 +272,9 @@ export default function MissionVoiceAgent() {
     },
   });
 
-  // ---------------- Voz: STT -> chat, respuesta -> TTS ----------------
-  const { messages, sendMessage, isLoading } = useCopilotChatInternal();
-  const [listening, setListening] = useState(false);
-  const [speak, setSpeak] = useState(true);
-  const recRef = useRef<SR | null>(null);
+  // ---------------- Voz: la respuesta del LLM se lee en voz alta (el micrófono vive en <ChatDock>) ----------------
+  const { messages, isLoading } = useCopilotChatInternal();
+  const speak = useUiStore((s) => s.speak);
   const lastSpoken = useRef<string | null>(null);
 
   useEffect(() => {
@@ -288,38 +289,5 @@ export default function MissionVoiceAgent() {
     window.speechSynthesis.speak(u);
   }, [messages, isLoading, speak, st.lang]);
 
-  const toggleMic = () => {
-    const W = window as unknown as { SpeechRecognition?: new () => SR; webkitSpeechRecognition?: new () => SR };
-    const Ctor = W.SpeechRecognition ?? W.webkitSpeechRecognition;
-    if (!Ctor) {
-      alert("Tu navegador no soporta reconocimiento de voz (usa Chrome o Edge).");
-      return;
-    }
-    if (listening) {
-      recRef.current?.stop();
-      return;
-    }
-    const rec = new Ctor();
-    rec.lang = store().lang === "es" ? "es-ES" : "en-US";
-    rec.interimResults = false;
-    rec.onresult = (e) => {
-      const text = e.results[0][0].transcript;
-      void sendMessage({ id: crypto.randomUUID(), role: "user", content: text });
-    };
-    rec.onend = () => setListening(false);
-    recRef.current = rec;
-    setListening(true);
-    rec.start();
-  };
-
-  return (
-    <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-2" id="tour-copilot">
-      <button onClick={() => setSpeak((s) => !s)} className="rounded-full bg-slate-800 p-3 text-slate-200 shadow-lg hover:bg-slate-700" aria-label="Activar o desactivar voz del copiloto" aria-pressed={speak}>
-        {speak ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-      </button>
-      <button onClick={toggleMic} className={`rounded-full p-4 shadow-lg ${listening ? "animate-pulse bg-red-600" : "bg-sky-600 hover:bg-sky-500"}`} aria-label="Hablar con el copiloto" aria-pressed={listening}>
-        {listening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-      </button>
-    </div>
-  );
+  return null;
 }

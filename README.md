@@ -74,3 +74,19 @@ Regenerar datos: `node scripts/generate_nasa_cache.mjs` (JPL, necesita internet)
 - **Lander detallado y rayos**: rayo Tierra (verde/violeta/rojo) desde la antena y rayo Sol hacia los paneles, cuyo color va de ámbar (Sol rasante) a blanco (Sol alto) y rojo si una montaña lo tapa.
 - **Datos simplificados**: 4 KPIs grandes + «Más detalles», línea de tiempo de 3 pistas, gráfica de batería/temperatura con zona de peligro, semáforo de estaciones.
 > La «aptitud» (0–100) es un índice de idoneidad (veredicto + ventana dorada + batería mínima), no una probabilidad estadística.
+
+## Novedades (v5)
+- **Impacto del rayo rojo**: cuando una montaña bloquea el Sol o la Tierra, el terreno donde choca el rayo se ilumina en rojo translúcido (se suma al color y se modula con el relieve, así la topografía sigue visible). `scene/LunarTerrain.tsx` (`hitGlow`).
+- **Suelo sin repetición**: el regolito mezcla copias desplazadas de la textura y variación a gran escala (`untile`).
+- **Globo lunar**: vista cenital con zoom por altitud (rueda o +/−), giro proporcional al zoom, coordenada bajo el cursor. Al acercar se usa el relieve LOLA polar y cráteres procedurales (ilustrativos) en vez de estirar la textura.
+- **Señal de alunizaje viable**: letrero verde en el globo, borde verde y ✔ en las celdas viables, aviso en el panel y en cada vista 3D.
+- **Interfaz en 3 pasos** (elegir punto → ver el lander → estadísticas) con **desplegables**; lo cerrado no se renderiza.
+- **Barra de tiempo** pegada a las vistas 3D (`dashboard/TimeBar.tsx`).
+- **Chat central** con preguntas guía (`copilot/MissionChat.tsx`). Con `LLM_API_KEY` usa CopilotKit; sin clave responde la guía integrada (`lib/helpBot.ts`) con el glosario y el estado actual.
+
+## Novedades (v6)
+- **Luna-Bot siempre disponible**: barra de chat fija abajo al centro (`copilot/ChatDock.tsx`) con micrófono, lectura en voz alta y preguntas guía. Con `LLM_API_KEY` usa CopilotKit; sin clave responde la guía integrada.
+- **Interfaz para niños sin perder lo técnico**: modo **🧒 Explorador** (por defecto, lenguaje sencillo, estrellas, medidores, «¿Sabías que…?») y modo **🔧 Ingeniero** (términos y datos técnicos). Los números son los mismos en ambos; cada tarjeta tiene «Datos técnicos».
+- **Navegación de 3 pasos** fija arriba, encabezado con botones grandes y «Ajustes» (tipo de misión, batería, calidad, efectos).
+- **Terreno de las vistas de la nave**: cráteres modelados en la geometría (proyectan sombra real), tonos por vértice (fondos oscuros, bordes claros, halo del motor bajo la nave) y rocas agrupadas en los bordes de los cráteres. Son ilustrativos y nunca superan el horizonte LOLA (borde ≤ 0,2°).
+- Tipografías locales en `public/fonts` (Baloo 2 y Nunito, licencia OFL).

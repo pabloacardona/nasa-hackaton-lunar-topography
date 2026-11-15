@@ -21,7 +21,7 @@ export default function MissionBriefModal() {
           <h2 id="brief-title" className="font-semibold text-slate-100">Informe de misión</h2>
           <div className="flex gap-2">
             <button onClick={() => navigator.clipboard.writeText(text)} className="flex items-center gap-1 rounded bg-slate-800 px-2 py-1 text-xs"><Copy className="h-3 w-3" /> Copiar</button>
-            <button onClick={download} className="flex items-center gap-1 rounded bg-sky-700 px-2 py-1 text-xs"><Download className="h-3 w-3" /> .md</button>
+            <button onClick={download} className="flex items-center gap-1 rounded bg-[#3a5a7a] px-2 py-1 text-xs"><Download className="h-3 w-3" /> .md</button>
             <button onClick={close} aria-label="Cerrar" className="rounded bg-slate-800 p-1"><X className="h-4 w-4" /></button>
           </div>
         </div>

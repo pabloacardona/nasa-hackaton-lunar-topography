@@ -32,7 +32,7 @@ export default function InfoTip({ k, children, icon = true, className = "" }: { 
       onMouseLeave={() => setPos(null)}
       onFocus={show}
       onBlur={() => setPos(null)}
-      className={`inline-flex cursor-help items-center gap-1 rounded outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 ${className}`}
+      className={`inline-flex cursor-help items-center gap-1 rounded outline-none focus-visible:ring-2 focus-visible:ring-[#d8c07a] ${className}`}
     >
       {children}
       {icon && <Info className="h-3 w-3 shrink-0 text-slate-500" aria-hidden />}
@@ -42,10 +42,10 @@ export default function InfoTip({ k, children, icon = true, className = "" }: { 
           <div
             id={id}
             role="tooltip"
-            className="pointer-events-none fixed z-[100] w-[340px] rounded-lg border border-sky-700 bg-slate-950/97 p-3 text-left text-xs normal-case leading-relaxed text-slate-200 shadow-2xl"
+            className="pointer-events-none fixed z-[100] w-[340px] rounded-lg border border-[#3a5a7a] bg-slate-950/97 p-3 text-left text-xs normal-case leading-relaxed text-slate-200 shadow-2xl"
             style={{ left: pos.x, top: pos.y, transform: pos.below ? undefined : "translateY(-100%)" }}
           >
-            <div className="mb-1 text-sm font-semibold text-sky-300">{e.title[i]}</div>
+            <div className="mb-1 text-sm font-semibold text-[#9dbdd9]">{e.title[i]}</div>
             {[e.what, e.how, e.why, e.use].map((t, j) => (
               <p key={j} className="mb-1">
                 <span className="font-semibold text-slate-400">{L[j]}: </span>

@@ -38,14 +38,14 @@ export default function PolarMap() {
   const polarSites = dataset?.sites.filter((s) => s.lat <= -80) ?? [];
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm" id="tour-polar">
-      <h2 className="mb-1 flex items-center gap-1 font-semibold text-slate-200"><MapIcon className="h-4 w-4 text-sky-400" aria-hidden /> {t("polarTitle")}</h2>
+      <h2 className="mb-1 flex items-center gap-1 font-semibold text-slate-200"><MapIcon className="h-4 w-4 text-[#7fa6c9]" aria-hidden /> {t("polarTitle")}</h2>
       <p className="mb-2 text-xs text-slate-400">{t("polarHelp")} → <b style={{ color: SCENARIO_COLORS[activeLabel] }}>{activeLabel}</b></p>
       <svg viewBox={`0 0 ${VB} ${VB}`} className="mx-auto h-auto w-full max-w-[400px] cursor-crosshair" role="img" aria-label="Mapa del polo sur lunar"
         onMouseMove={(e) => setHover(fromEvent(e))} onMouseLeave={() => setHover(null)}
         onClick={(e) => { const p = fromEvent(e); if (p) void exploreAt(p.lat, p.lon); }}>
         <image href="/textures/moon/south_pole_map_1k.webp" x={0} y={0} width={VB} height={VB} />
         {[-82, -84, -86, -88].map((lat) => (
-          <circle key={lat} cx={VB / 2} cy={VB / 2} r={toXY(lat, 0).y - VB / 2 < 0 ? VB / 2 - toXY(lat, 0).y : toXY(lat, 0).y - VB / 2} fill="none" stroke="#38bdf8" strokeOpacity={0.15} />
+          <circle key={lat} cx={VB / 2} cy={VB / 2} r={toXY(lat, 0).y - VB / 2 < 0 ? VB / 2 - toXY(lat, 0).y : toXY(lat, 0).y - VB / 2} fill="none" stroke="#5f8fb8" strokeOpacity={0.15} />
         ))}
         {[0, 90, 180, 270].map((lon) => {
           const p = toXY(-80, lon);
@@ -55,7 +55,7 @@ export default function PolarMap() {
           const p = toXY(s.lat, s.lon);
           return (
             <g key={s.id} onClick={async (e) => { e.stopPropagation(); await setSite(activeLabel, s.id); void exploreAt(s.lat, s.lon, { moveScenario: false }); }} className="cursor-pointer">
-              <circle cx={p.x} cy={p.y} r={9} fill="#facc15" stroke="#000" strokeWidth={2} />
+              <circle cx={p.x} cy={p.y} r={9} fill="#c9a85e" stroke="#000" strokeWidth={2} />
               <text x={p.x + 12} y={p.y + 5} fontSize={20} fill="#fde68a" stroke="#000" strokeWidth={4} paintOrder="stroke">{s.name}</text>
             </g>
           );

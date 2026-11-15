@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
-:root {
-  --copilot-kit-primary-color: #0284c7;
+/* Tipografías locales (sin depender de internet): Baloo 2 para títulos, Nunito para texto */
+@font-face { font-family: "Baloo 2"; font-weight: 700; font-display: swap; src: url("/fonts/baloo-2-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Baloo 2"; font-weight: 800; font-display: swap; src: url("/fonts/baloo-2-latin-800-normal.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-weight: 400; font-display: swap; src: url("/fonts/nunito-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-weight: 600; font-display: swap; src: url("/fonts/nunito-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Nunito"; font-weight: 800; font-display: swap; src: url("/fonts/nunito-latin-800-normal.woff2") format("woff2"); }
+
+@theme {
+  --font-display: "Baloo 2", "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Nunito", ui-rounded, "Segoe UI", system-ui, Roboto, Arial, sans-serif;
 }
 
-body {
-  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+:root {
+  --copilot-kit-primary-color: #4f7fa8;
+  --copilot-kit-contrast-color: #ffffff;
+  --copilot-kit-background-color: #070b18;
+  --copilot-kit-input-background-color: #1e293b;
+  --copilot-kit-secondary-color: #1e293b;
+  --copilot-kit-secondary-contrast-color: #e2e8f0;
+  --copilot-kit-separator-color: #334155;
+  --copilot-kit-muted-color: #94a3b8;
 }
+
+html { font-size: 16.5px; }
+
+/* Fondo: espacio profundo con nebulosas suaves y estrellas (solo CSS, sin imágenes) */
+body {
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 9%, #cbd5e1 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 62%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 44%, #e2e8f0 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 86%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 6% 78%, #c4dbec 50%, transparent 51%),
+    radial-gradient(900px 500px at 85% -5%, rgba(100, 116, 139, 0.14), transparent 70%),
+    radial-gradient(800px 500px at 0% 30%, rgba(71, 110, 150, 0.12), transparent 70%),
+    #050816;
+  background-size: 420px 420px, 380px 380px, 520px 520px, 460px 460px, 340px 340px, 600px 600px, auto, auto, auto;
+  background-attachment: fixed;
+}
+
+/* Tarjeta base */
+.card {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  background: rgba(15, 23, 42, 0.82);
+}
+
+/* Botones: una sola familia, sobria y clara. Variantes con color suave; sin sombras duras */
+.btn-fun {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  white-space: nowrap; border-radius: 0.75rem; padding: 0.45rem 0.9rem;
+  font-weight: 700; font-size: 0.85rem; line-height: 1.2;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #334155; color: #f1f5f9;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+.btn-fun:hover { background-color: #3f4f66; border-color: rgba(203, 213, 225, 0.55); }
+.btn-fun:active { transform: translateY(1px); }
+.btn-fun:focus-visible { outline: 2px solid #cbd5e1; outline-offset: 2px; }
+.btn-fun[aria-pressed="true"] { background: #475569; border-color: #cbd5e1; }
+
+@keyframes pop { from { transform: scale(0.92) translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.pop { animation: pop 0.22s ease-out; }
+@keyframes wiggle { 0%, 86%, 100% { transform: rotate(0); } 89% { transform: rotate(-14deg); } 92% { transform: rotate(12deg); } 95% { transform: rotate(-8deg); } 98% { transform: rotate(5deg); } }
+.wiggle { display: inline-block; animation: wiggle 5s ease-in-out infinite; }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.floaty { display: inline-block; animation: floaty 3.2s ease-in-out infinite; }
+@keyframes glowPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); } 50% { box-shadow: 0 0 0 9px rgba(52, 211, 153, 0); } }
+.glow-ok { animation: glowPulse 1.8s ease-out infinite; }
 
 /* Tour guiado: resalta la sección activa */
 [data-tour-active="true"] {
-  outline: 3px solid #38bdf8;
+  outline: 3px solid #5f8fb8;
   outline-offset: 4px;
-  border-radius: 12px;
+  border-radius: 16px;
   transition: outline-color 0.3s;
 }
 
 /* Accesibilidad: foco visible con teclado */
 :focus-visible {
-  outline: 2px solid #fde047;
+  outline: 2px solid #d8c07a;
   outline-offset: 2px;
 }
+
+/* Dentro de un desplegable las tarjetas no repiten el marco */
+[data-collapsible-body] > section {
+  border: 0;
+  background: transparent;
+  padding: 0.25rem;
+}
+
+/* En la barra de chat solo hay UN campo de texto: se oculta el del componente de CopilotKit */
+.chat-dock .copilotKitInputContainer { display: none; }
+.chat-dock form input:focus-visible { outline: none; }
+.chat-dock form:focus-within { border-color: #d8c07a; }
 
 @media (prefers-reduced-motion: reduce) {
   * {

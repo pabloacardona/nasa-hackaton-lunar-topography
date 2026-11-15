@@ -31,7 +31,7 @@ export default function EnergyThermalChart() {
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <InfoTip k={kind === "soc" ? "battery" : "temperature"}>
           <h2 className="flex items-center gap-1 font-semibold text-slate-200">
-            <BatteryMedium className="h-4 w-4 text-lime-400" aria-hidden /> {kind === "soc" ? (es ? "Batería durante la misión" : "Battery over the mission") : (es ? "Temperatura del suelo" : "Surface temperature")}
+            <BatteryMedium className="h-4 w-4 text-[#a3bb84]" aria-hidden /> {kind === "soc" ? (es ? "Batería durante la misión" : "Battery over the mission") : (es ? "Temperatura del suelo" : "Surface temperature")}
           </h2>
         </InfoTip>
         <div className="flex overflow-hidden rounded border border-slate-600 text-xs" role="group">
@@ -57,7 +57,7 @@ export default function EnergyThermalChart() {
           <line x1={hour} x2={hour} y1={0} y2={H} stroke="#fff" strokeWidth={1} vectorEffect="non-scaling-stroke" opacity={0.7} />
         </svg>
         <div className="pointer-events-none absolute left-1 top-0 text-[10px] text-slate-500">{kind === "soc" ? "100 %" : "+130 °C"}</div>
-        <div className="pointer-events-none absolute bottom-0 left-1 text-[10px] text-red-300">{kind === "soc" ? (es ? "0 % = se congela" : "0% = freezes") : "−200 °C"}</div>
+        <div className="pointer-events-none absolute bottom-0 left-1 text-[10px] text-[#e0a4a8]">{kind === "soc" ? (es ? "0 % = se congela" : "0% = freezes") : "−200 °C"}</div>
       </div>
       <p className="mt-1 text-[11px] text-slate-500">
         {kind === "soc"

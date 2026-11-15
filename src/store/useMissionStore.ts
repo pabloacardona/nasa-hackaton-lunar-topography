@@ -78,6 +78,7 @@ interface MissionState {
   jumpToEvent: (label: ScenarioLabel, ev: EventType) => number;
   togglePlay: () => void;
   setSpeed: (s: 1 | 10 | 30) => void;
+  pausePlayback: () => void;
   setViewMode: (m: ViewMode) => void;
   setAudienceMode: (m: AudienceMode) => void;
   setMissionHours: (h: number) => void;
@@ -110,9 +111,9 @@ export const useMissionStore = create<MissionState>((set, get) => {
     playhead: 0,
     currentHourIndex: 0,
     isPlaying: false,
-    speed: 10,
+    speed: 1,
     viewMode: "split_3d",
-    audienceMode: "engineer",
+    audienceMode: "educator", // por defecto: modo Explorador (lenguaje sencillo); "engineer" muestra todo lo técnico
     missionHours: 240,
     power: DEFAULT_POWER,
     lang: "es",
@@ -261,6 +262,8 @@ export const useMissionStore = create<MissionState>((set, get) => {
 
     togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying, currentHourIndex: Math.floor(s.playhead) })),
     setSpeed: (speed) => set({ speed }),
+    /** Detiene la reproducción y deja el cabezal donde está (para que el usuario tome el control). */
+    pausePlayback: () => set((s) => (s.isPlaying ? { isPlaying: false, currentHourIndex: Math.floor(s.playhead) } : {})),
     setViewMode: (viewMode) => set({ viewMode }),
     setAudienceMode: (audienceMode) => set({ audienceMode }),
     setMissionHours: (missionHours) => {

@@ -38,8 +38,8 @@ const StaticLayer = memo(function StaticLayer({ sc, yMax }: { sc: Scenario; yMax
         </g>
       ))}
       <line x1={0} x2={W} y1={y(0)} y2={y(0)} stroke="#475569" />
-      <path d={path("sun")} stroke="#fbbf24" strokeWidth={1.8} strokeLinecap="round" opacity={0.35} />
-      <path d={path("earth")} stroke="#22d3ee" strokeWidth={1.8} strokeLinecap="round" opacity={0.45} />
+      <path d={path("sun")} stroke="#c9a25e" strokeWidth={1.8} strokeLinecap="round" opacity={0.35} />
+      <path d={path("earth")} stroke="#7ab8c4" strokeWidth={1.8} strokeLinecap="round" opacity={0.45} />
       <polygon points={terrain} fill="#1f2937" stroke="#94a3b8" strokeWidth={0.8} />
     </>
   );
@@ -56,14 +56,14 @@ export function Skyplot({ sc }: { sc: Scenario }) {
     <div className="rounded-lg bg-black/60 p-1">
       <div className="flex items-center gap-2 px-1 text-[11px] text-slate-400">
         <InfoTip k="panorama"><span><span style={{ color: SCENARIO_COLORS[sc.label] }}>●</span> {sc.label} · {sc.siteName}</span></InfoTip>
-        <span className="ml-auto">☀ <span className="text-amber-300">Sol</span> · 🌍 <span className="text-cyan-300">Tierra</span> · ⛰ montañas · rojo = oculto</span>
+        <span className="ml-auto">Sol <span className="text-[#dcc08f]">Sol</span> · Tierra <span className="text-[#9bcbd4]">Tierra</span> ·  montañas · rojo = oculto</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`Panorama del horizonte ${sc.label}`}>
         <StaticLayer sc={sc} yMax={yMax} />
         {h && (
           <>
-            <circle cx={x(h.sunAz)} cy={y(h.sunEl)} r={6} fill={h.sunVisible ? "#facc15" : "#ef4444"} stroke="white" />
-            <circle cx={x(h.earthAz)} cy={y(h.earthEl)} r={5} fill={h.dte === "full" ? "#38bdf8" : h.dte === "degraded" ? "#a78bfa" : "#ef4444"} stroke="white" />
+            <circle cx={x(h.sunAz)} cy={y(h.sunEl)} r={6} fill={h.sunVisible ? "#c9a85e" : "#b86b6e"} stroke="white" />
+            <circle cx={x(h.earthAz)} cy={y(h.earthEl)} r={5} fill={h.dte === "full" ? "#5f8fb8" : h.dte === "degraded" ? "#9d8fc2" : "#b86b6e"} stroke="white" />
           </>
         )}
       </svg>

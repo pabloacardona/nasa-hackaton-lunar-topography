@@ -45,13 +45,13 @@ export default function EarthVsMoon() {
 
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm" id="tour-earthmoon">
-      <h2 className="mb-2 flex items-center gap-1 font-semibold text-slate-200"><Scale className="h-4 w-4 text-sky-400" aria-hidden /> {t("earthVsMoon")}: Medellín vs. <span style={{ color: SCENARIO_COLORS[sc.label] }}>{sc.label} · {sc.siteName}</span></h2>
+      <h2 className="mb-2 flex items-center gap-1 font-semibold text-slate-200"><Scale className="h-4 w-4 text-[#7fa6c9]" aria-hidden /> {t("earthVsMoon")}: Medellín vs. <span style={{ color: SCENARIO_COLORS[sc.label] }}>{sc.label} · {sc.siteName}</span></h2>
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full rounded bg-slate-950" role="img" aria-label="Elevación del Sol en la Tierra y en la Luna durante 30 días">
         <line x1={0} x2={W} y1={y(0)} y2={y(0)} stroke="#475569" />
-        <path d={line(data.earth)} stroke="#60a5fa" fill="none" strokeWidth={1} opacity={0.8} />
-        <path d={line(data.moon)} stroke="#fbbf24" fill="none" strokeWidth={2} />
-        <text x={6} y={14} fill="#60a5fa" fontSize={8}>Tierra: el Sol sale y se pone cada 24 h</text>
-        <text x={6} y={H - 6} fill="#fbbf24" fontSize={8}>Luna: un solo «día» de ~29,5 días terrestres</text>
+        <path d={line(data.earth)} stroke="#7ea4c9" fill="none" strokeWidth={1} opacity={0.8} />
+        <path d={line(data.moon)} stroke="#c9a25e" fill="none" strokeWidth={2} />
+        <text x={6} y={14} fill="#7ea4c9" fontSize={8}>Tierra: el Sol sale y se pone cada 24 h</text>
+        <text x={6} y={H - 6} fill="#c9a25e" fontSize={8}>Luna: un solo «día» de ~29,5 días terrestres</text>
       </svg>
       <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-300 md:grid-cols-5">
         <Cell k="Duración del día" a={`${data.earthDay} h`} b={`${data.moonLit} h de Sol en 30 d`} />
@@ -68,8 +68,8 @@ function Cell({ k, a, b }: { k: string; a: string; b: string }) {
   return (
     <div className="rounded bg-slate-800/60 p-2">
       <div className="text-[10px] uppercase text-slate-500">{k}</div>
-      <div className="text-sky-300">🌍 {a}</div>
-      <div className="text-amber-300">🌙 {b}</div>
+      <div className="text-[#9dbdd9]">Tierra {a}</div>
+      <div className="text-[#dcc08f]"> {b}</div>
     </div>
   );
 }

@@ -104,7 +104,7 @@ export default function SeasonsHeatmap() {
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm" id="tour-seasons">
       <div className="mb-1 flex flex-wrap items-center gap-2">
-        <InfoTip k="seasons"><h2 className="flex items-center gap-1 font-semibold text-slate-200"><CalendarRange className="h-4 w-4 text-sky-400" aria-hidden /> {t("seasonsTitle")}</h2></InfoTip>
+        <InfoTip k="seasons"><h2 className="flex items-center gap-1 font-semibold text-slate-200"><CalendarRange className="h-4 w-4 text-[#7fa6c9]" aria-hidden /> {t("seasonsTitle")}</h2></InfoTip>
         <div className="flex overflow-hidden rounded border border-slate-600 text-xs" role="group" aria-label={t("metric")}>
           {([["status", "Semáforo"], ["golden", "Sol + Tierra %"]] as const).map(([k, l]) => (
             <button key={k} onClick={() => setMetric(k)} aria-pressed={metric === k} className={`px-2 py-0.5 ${metric === k ? "bg-slate-600" : "bg-slate-800"}`}>{l}</button>
@@ -117,8 +117,8 @@ export default function SeasonsHeatmap() {
         {metric === "status" ? (
           <>
             <span><i className="mr-1 inline-block h-2.5 w-3 bg-green-600" />Viable</span>
-            <span><i className="mr-1 inline-block h-2.5 w-3 bg-amber-600" />Requiere relé</span>
-            <span><i className="mr-1 inline-block h-2.5 w-3 bg-red-800" />Riesgo</span>
+            <span><i className="mr-1 inline-block h-2.5 w-3 bg-[#9e7c4c]" />Requiere relé</span>
+            <span><i className="mr-1 inline-block h-2.5 w-3 bg-[#6e3d41]" />Riesgo</span>
           </>
         ) : (
           <span>Oscuro = poco · claro/verde = mucho</span>
@@ -140,7 +140,7 @@ export default function SeasonsHeatmap() {
           {hover && hover.row.days[hover.day] && (
             <div className="pointer-events-none absolute z-10 rounded bg-slate-950/95 px-2 py-1 text-[11px] text-slate-200 shadow" style={{ left: Math.min(hover.x + 10, 600), top: hover.y + 20 }}>
               <b>{hover.row.label}</b> · {new Date(t0 + hover.day * 86400_000).toISOString().slice(0, 10)}<br />
-              ☀ {hover.row.days[hover.day]!.sunPct}% · 🌍 {hover.row.days[hover.day]!.dtePct}% · ✦ {hover.row.days[hover.day]!.goldenPct}% ·{" "}
+              Sol {hover.row.days[hover.day]!.sunPct}% · Tierra {hover.row.days[hover.day]!.dtePct}% · ✦ {hover.row.days[hover.day]!.goldenPct}% ·{" "}
               {["viable", "requiere relé", "riesgo de congelamiento"][hover.row.days[hover.day]!.status]}
             </div>
           )}
@@ -160,8 +160,8 @@ export default function SeasonsHeatmap() {
                   <td className="truncate pr-2" style={{ color: r.color, maxWidth: 160 }}>{r.label}</td>
                   {r.lunations.map((l, i) => (
                     <td key={i} className="px-0.5">
-                      <div className="flex h-6 items-end gap-px" title={`☀ ${l.sunPct}% · 🌍 ${l.dtePct}%`}>
-                        <div className="w-1.5 bg-amber-400" style={{ height: `${Math.max(2, l.sunPct * 0.24)}px` }} />
+                      <div className="flex h-6 items-end gap-px" title={`Sol ${l.sunPct}% · Tierra ${l.dtePct}%`}>
+                        <div className="w-1.5 bg-[#c9a66b]" style={{ height: `${Math.max(2, l.sunPct * 0.24)}px` }} />
                         <div className="w-1.5 bg-cyan-400" style={{ height: `${Math.max(2, l.dtePct * 0.24)}px` }} />
                       </div>
                     </td>

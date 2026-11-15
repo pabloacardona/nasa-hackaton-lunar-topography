@@ -1,78 +1,170 @@
-// Demo narrada: secuencia guiada con voz (Web Speech API). Funciona SIN LLM ni API key — ideal para el video.
-import { useMissionStore } from "@/store/useMissionStore";
+// Demo para grabar el video del pitch: guion con subtítulos, puntero virtual que hace clic
+// en los controles reales y narración (Web Speech API) en el idioma elegido.
+// No necesita LLM ni API key. Cada escena espera a que termine su acción antes de seguir.
+import { useMissionStore, effectiveStart } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
 import { honeyScore } from "./honeycomb";
-import { exploreAt } from "./explore";
-import { effectiveStart } from "@/store/useMissionStore";
+import { exploreAt, goToCell } from "./explore";
 
+type Lang = "es" | "en";
 let cancelled = false;
 export const cancelDemo = () => {
   cancelled = true;
-  if (typeof window !== "undefined") window.speechSynthesis.cancel();
+  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  useUiStore.getState().setDemoCaption(null);
+  useUiStore.getState().setDemoCursor(null);
 };
 
-function say(text: string, lang: "es" | "en"): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return setTimeout(resolve, 2500);
+const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+function check() { if (cancelled) throw new Error("cancelled"); }
+
+/** Narra y devuelve cuando termina la voz (o pasa el tiempo de lectura, lo que tarde más). */
+function speak(text: string, lang: Lang, minMs: number): Promise<void> {
+  const reading = wait(minMs);
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return reading;
+  const voiced = new Promise<void>((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang === "es" ? "es-ES" : "en-US";
-    u.rate = 1.05;
+    u.rate = 1;
     u.onend = () => resolve();
     u.onerror = () => resolve();
     window.speechSynthesis.speak(u);
+    setTimeout(resolve, 15000); // seguridad si el navegador no termina la voz
   });
+  return Promise.all([reading, voiced]).then(() => undefined);
 }
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const scroll = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+/** Mueve el puntero virtual hasta el elemento, hace clic (onda) y ejecuta la acción. */
+async function point(sel: string | null, act?: () => Promise<unknown> | void) {
+  const ui = useUiStore.getState();
+  if (sel) {
+    const el = document.querySelector(sel) as HTMLElement | null;
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      await wait(700);
+      const r = el.getBoundingClientRect();
+      const x = Math.min(window.innerWidth - 30, Math.max(10, r.left + r.width / 2));
+      const y = Math.min(window.innerHeight - 30, Math.max(10, r.top + r.height / 2));
+      ui.setDemoCursor({ x, y, click: (ui.demoCursor?.click ?? 0) });
+      await wait(1000);
+      ui.setDemoCursor({ x, y, click: (ui.demoCursor?.click ?? 0) + 1 });
+      await wait(250);
+    }
+  }
+  if (act) await act();
+}
+
+/** Busca un botón por su texto dentro de la página (para «Alrededor de» o «¡Ir aquí!»). */
+function buttonWith(text: string, index = 0): string | null {
+  const all = [...document.querySelectorAll("button")].filter((b) => b.textContent?.includes(text));
+  const b = all[index];
+  if (!b) return null;
+  b.setAttribute("data-demo-target", `${text}-${index}`);
+  return `[data-demo-target="${text}-${index}"]`;
+}
 
 export async function runNarratedDemo() {
-  const st = useMissionStore.getState();
   const ui = useUiStore.getState();
-  const es = st.lang === "es";
   cancelled = false;
   ui.setDemoRunning(true);
-  try {
-    const step = async (text: [string, string], act?: () => Promise<unknown> | void, section?: string) => {
-      if (cancelled) throw new Error("cancel");
-      if (section) scroll(section);
-      if (act) await act();
-      await say(es ? text[0] : text[1], st.lang);
-      await wait(400);
-    };
-    const m = () => useMissionStore.getState().getScenario("A")?.metrics;
+  const lang = (): Lang => (useMissionStore.getState().lang === "es" ? "es" : "en");
 
-    await step(["Somos el equipo de una misión comercial CLPS rumbo a Mons Mouton, en el polo sur de la Luna. Alunizaje: 15 de noviembre de 2026.",
-      "We are a commercial CLPS mission headed to Mons Mouton, at the lunar south pole. Landing: November 15, 2026."], async () => {
-      await st.setSite("A", "mons_mouton");
-      await st.setBaseDate("A", "2026-11-15T00:00:00Z");
-      await st.setDelay("A", 0);
-      st.setActive("A");
-    }, "tour-3d");
-    await step([`Con esa fecha la misión es ${m()?.viability === "VIABLE" ? "viable" : "riesgosa"}: ${m()?.goldenPct} por ciento de ventana dorada, Sol y Tierra a la vez.`,
-      `On that date the mission is ${m()?.viability === "VIABLE" ? "viable" : "at risk"}: ${m()?.goldenPct} percent golden window, Sun and Earth at once.`], undefined, "tour-metrics");
-    await step(["Pero el cohete se retrasa catorce días.", "But the rocket slips by fourteen days."], () => st.setDelay("A", 14), "tour-scenarios");
-    await step([`Ahora el veredicto es: ${m()?.viabilityReason}`, `Now the verdict is: ${m()?.viabilityReason}`], undefined, "tour-metrics");
-    await step(["Buscamos alternativas cercanas con el panal de abeja: cada celda tiene su propio horizonte real medido por el láser LOLA.",
-      "We search nearby alternatives with the honeycomb: each cell has its own real horizon measured by the LOLA laser."], async () => {
-      const sc = useMissionStore.getState().getScenario("A")!;
-      await exploreAt(sc.lat, sc.lon, { label: "A", spacingKm: 2, rings: 3, moveScenario: false });
-    }, "tour-explore");
-    const honey = useUiStore.getState().honey;
-    const best = honey ? [...honey.results].sort((a, b) => honeyScore(b) - honeyScore(a))[0] : null;
-    if (best) {
-      await step([`La mejor celda está a ${Math.hypot(best.cell.northKm, best.cell.eastKm).toFixed(1)} kilómetros, con aptitud ${best.aptitude} de 100. La asignamos al escenario B.`,
-        `The best cell is ${Math.hypot(best.cell.northKm, best.cell.eastKm).toFixed(1)} kilometers away, with suitability ${best.aptitude} out of 100. We assign it to scenario B.`], async () => {
-        if (!useMissionStore.getState().getScenario("B")) useMissionStore.getState().addScenario();
-        await useMissionStore.getState().setDelay("B", 0);
-        await useMissionStore.getState().setBaseDate("B", effectiveStart(useMissionStore.getState().getScenario("A")!));
-        await useMissionStore.getState().setCustomCoords("B", best.lat, best.lon, "Alternativa panal");
-      }, "tour-metrics");
+  // Cada escena: texto en ambos idiomas, elemento a señalar, acción y tiempo de lectura mínimo.
+  type Scene = { es: string; en: string; target?: string | null; act?: () => Promise<unknown> | void; hold?: number };
+  const scenes: Scene[] = [
+    { es: "El reto de la NASA: elegir dónde aterrizar en el polo sur de la Luna, con seguridad.", en: "The NASA challenge: choose where to land on the Moon's south pole, safely.", hold: 1500 },
+    {
+      es: "Mons Mouton, en el polo sur, con alunizaje el 15 de noviembre de 2026.",
+      en: "Mons Mouton, at the south pole, landing on November 15, 2026.",
+      target: "#tour-scenarios",
+      act: async () => {
+        const st = useMissionStore.getState();
+        await st.setSite("A", "mons_mouton");
+        await st.setBaseDate("A", "2026-11-15T00:00:00Z");
+        await st.setDelay("A", 0);
+        st.setActive("A");
+      },
+    },
+    {
+      es: "Con esa fecha la misión sí es viable: hay Sol y Tierra a la vez en la ventana dorada.",
+      en: "On that date the mission is viable: Sun and Earth are both available in the golden window.",
+      target: "#tour-metrics",
+    },
+    {
+      es: "Pero el cohete se retrasa catorce días. Mira cómo cambia el veredicto.",
+      en: "But the rocket slips fourteen days. Watch how the verdict changes.",
+      target: "#tour-scenarios",
+      act: () => useMissionStore.getState().setDelay("A", 14),
+    },
+    {
+      es: "Ahora el lugar ya no sirve. Buscamos alternativas cercanas con el panal de abeja.",
+      en: "Now this place no longer works. We search nearby alternatives with the honeycomb.",
+      target: buttonWith("Alrededor de"),
+      act: async () => {
+        const sc = useMissionStore.getState().getScenario("A")!;
+        await exploreAt(sc.lat, sc.lon, { label: "A", spacingKm: 2, rings: 3, moveScenario: false });
+      },
+      hold: 2000,
+    },
+    {
+      es: "Cada celda tiene su propio horizonte real, medido con el láser LOLA de la NASA.",
+      en: "Each cell has its own real horizon, measured with NASA's LOLA laser.",
+      target: "#tour-explore",
+    },
+    {
+      es: "La mejor alternativa a pocos kilómetros: la movemos ahí con un clic.",
+      en: "The best alternative is a few kilometers away: we move the lander there with one click.",
+      target: null,
+      act: async () => {
+        const honey = useUiStore.getState().honey;
+        const best = honey ? [...honey.results].sort((a, b) => honeyScore(b) - honeyScore(a)).filter((r) => Math.hypot(r.cell.northKm, r.cell.eastKm) > 0.01)[0] : null;
+        if (!best) return;
+        await goToCell(best.lat, best.lon, "A");
+      },
+      hold: 1500,
+    },
+    {
+      es: "Ahora vemos la vista desde la nave. El rayo amarillo es la luz del Sol.",
+      en: "Now the view from the lander. The yellow beam is sunlight.",
+      target: "#tour-timebar button[aria-label]",
+      act: () => useMissionStore.getState().togglePlay(),
+      hold: 4000,
+    },
+    {
+      es: "La barra del tiempo avanza despacio y se detiene sola cuando la tocas, para que tú tomes el control.",
+      en: "The time bar moves slowly and stops by itself when you touch it, so you take control.",
+      target: "#tour-timebar input[type=range]",
+      act: () => useMissionStore.getState().pausePlayback(),
+    },
+    {
+      es: "Y en el mapa de estaciones vemos qué fechas del año funcionan para cada sitio.",
+      en: "And on the seasons map we see which dates of the year work for each site.",
+      target: "#tour-seasons",
+    },
+    {
+      es: "Con las herramientas actuales esto tomaría días. Aquí, segundos. Gracias.",
+      en: "With today's tools this would take days. Here, seconds. Thank you.",
+      target: null,
+      hold: 2000,
+    },
+  ];
+
+  try {
+    for (const sc of scenes) {
+      check();
+      const text = lang() === "es" ? sc.es : sc.en;
+      ui.setDemoCaption(text);
+      const words = text.split(" ").length;
+      await point(sc.target ?? null, sc.act);
+      check();
+      await speak(text, lang(), Math.max(sc.hold ?? 0, words * 420 + 900));
+      await wait(300);
     }
-    await step(["Y con el mapa de estaciones vemos qué fechas del año funcionan para cada sitio.", "And the seasons map shows which dates of the year work for each site."], undefined, "tour-seasons");
-    await step(["Con las herramientas actuales esto tomaría días. Aquí, segundos.", "With today's tools this would take days. Here, seconds."], undefined, "tour-3d");
   } catch {
-    /* cancelado */
+    /* cancelado por el usuario */
   } finally {
-    useUiStore.getState().setDemoRunning(false);
+    ui.setDemoCaption(null);
+    ui.setDemoCursor(null);
+    ui.setDemoRunning(false);
   }
 }
