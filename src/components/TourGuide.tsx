@@ -16,12 +16,12 @@ const STEPS: { id: string; es: [string, string]; en: [string, string] }[] = [
   { id: "tour-timeline", es: ["Línea de tiempo", "Una fila por escenario: Sol (ámbar), Tierra (cian) y ambos (verde)."], en: ["Timeline", "One row per scenario: Sun (amber), Earth (cyan) and both (green)."] },
   { id: "tour-honeycomb", es: ["Panal de abeja", "Ranking automático de las celdas del último clic. «Usar» mueve el escenario activo a esa celda: moverse 1 km puede cambiar la luz del 25 % al 70 %."], en: ["Honeycomb", "Automatic ranking of the cells from your last click. “Use” moves the active scenario there: moving 1 km can change sunlight from 25% to 70%."] },
   { id: "tour-seasons", es: ["Días lunares y estaciones", "12 meses de fechas de alunizaje por sitio. Clic para usar una fecha."], en: ["Lunar days & seasons", "12 months of landing dates per site. Click to use a date."] },
-  { id: "tour-polar", es: ["Mapa polar", "Haz clic en cualquier punto del polo sur para evaluarlo al instante."], en: ["Polar map", "Click anywhere at the south pole to evaluate it instantly."] },
+  { id: "tour-honeycomb", es: ["Mapa polar", "Haz clic en cualquier punto del polo sur para evaluarlo al instante."], en: ["Polar map", "Click anywhere at the south pole to evaluate it instantly."] },
 ];
 
 const SECTION_OF: Record<string, string> = {
   "tour-scenarios": "sec-scenarios", "tour-panorama": "sec-panorama", "tour-metrics": "sec-metrics",
-  "tour-timeline": "sec-timeline", "tour-seasons": "sec-seasons", "tour-polar": "sec-polar",
+  "tour-timeline": "sec-timeline", "tour-seasons": "sec-seasons",
 };
 
 export default function TourGuide() {
@@ -50,12 +50,20 @@ export default function TourGuide() {
 
   if (step === null) return null;
   const s = STEPS[step];
+  // Clic en el título o la descripción: resalta la zona en la web (destello de 2,4 s).
+  const flash = () => {
+    const el = document.getElementById(s.id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.setAttribute("data-tour-flash", "true");
+    setTimeout(() => el.removeAttribute("data-tour-flash"), 2400);
+  };
   const [title, body] = lang === "es" ? s.es : s.en;
   return (
     <div role="dialog" aria-modal="false" aria-labelledby="tour-title" className="pop fixed bottom-24 left-4 z-[60] w-[360px] max-w-[calc(100vw-2rem)] rounded-3xl border-2 border-[#7fa6c9] bg-slate-950 p-4 text-sm shadow-2xl">
       <div className="mb-1 text-[11px] text-[#7fa6c9]">{step + 1} / {STEPS.length}</div>
-      <h3 id="tour-title" className="mb-1 font-display text-lg font-extrabold text-white"> {title}</h3>
-      <p className="mb-3 text-slate-300">{body}</p>
+      <h3 id="tour-title" onClick={flash} title={lang === "es" ? "Toca para resaltar la zona" : "Tap to highlight the area"} className="mb-1 cursor-pointer font-display text-lg font-extrabold text-white hover:text-[#bae6fd]"> {title}</h3>
+      <p onClick={flash} title={lang === "es" ? "Toca para resaltar la zona" : "Tap to highlight the area"} className="mb-3 cursor-pointer text-slate-300 hover:text-white">{body}</p>
       <div className="flex justify-between gap-2">
         <button className="rounded bg-slate-800 px-3 py-1" onClick={() => setStep(null)}>{tStatic("close", lang)}</button>
         <div className="flex gap-2">

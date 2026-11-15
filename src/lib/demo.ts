@@ -1,16 +1,17 @@
 // Demo para grabar el video del pitch: guion con subtítulos, puntero virtual que hace clic
 // en los controles reales y narración (Web Speech API) en el idioma elegido.
 // No necesita LLM ni API key. Cada escena espera a que termine su acción antes de seguir.
-import { useMissionStore, effectiveStart } from "@/store/useMissionStore";
+import { useMissionStore } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
 import { honeyScore } from "./honeycomb";
 import { exploreAt, goToCell } from "./explore";
+import { speakText, stopSpeaking } from "./voice";
 
 type Lang = "es" | "en";
 let cancelled = false;
 export const cancelDemo = () => {
   cancelled = true;
-  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  stopSpeaking();
   useUiStore.getState().setDemoCaption(null);
   useUiStore.getState().setDemoCursor(null);
 };
@@ -20,18 +21,7 @@ function check() { if (cancelled) throw new Error("cancelled"); }
 
 /** Narra y devuelve cuando termina la voz (o pasa el tiempo de lectura, lo que tarde más). */
 function speak(text: string, lang: Lang, minMs: number): Promise<void> {
-  const reading = wait(minMs);
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return reading;
-  const voiced = new Promise<void>((resolve) => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang === "es" ? "es-ES" : "en-US";
-    u.rate = 1;
-    u.onend = () => resolve();
-    u.onerror = () => resolve();
-    window.speechSynthesis.speak(u);
-    setTimeout(resolve, 15000); // seguridad si el navegador no termina la voz
-  });
-  return Promise.all([reading, voiced]).then(() => undefined);
+  return Promise.all([wait(minMs), speakText(text, lang, { rate: 0.95, maxMs: 15000 })]).then(() => undefined);
 }
 
 /** Mueve el puntero virtual hasta el elemento, hace clic (onda) y ejecuta la acción. */
@@ -124,7 +114,7 @@ export async function runNarratedDemo() {
       hold: 1500,
     },
     {
-      es: "Ahora vemos la vista desde la nave. El rayo amarillo es la luz del Sol.",
+      es: "Ahora vemos la vista desde el lander. El rayo amarillo es la luz del Sol.",
       en: "Now the view from the lander. The yellow beam is sunlight.",
       target: "#tour-timebar button[aria-label]",
       act: () => useMissionStore.getState().togglePlay(),

@@ -9,7 +9,8 @@ import { CameraControls, Html, PerformanceMonitor, Stars } from "@react-three/dr
 import { Bloom, EffectComposer, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import * as THREE from "three";
-import { Hexagon, Loader2, Maximize2, Minus, Plus, Sun as SunIcon, Lightbulb } from "lucide-react";
+import { Hexagon, Loader2, Maximize2, Minus, Plus, Sun as SunIcon } from "lucide-react";
+import Switch from "@/components/ui/Switch";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
 import { TIER, useGfxStore, useTier, type Tier } from "@/store/useGfxStore";
@@ -103,15 +104,9 @@ const moonFrag = /* glsl */ `
     float wPolar = cap * near;
     float poleFade = 1.0 - smoothstep(0.975, 0.998, abs(n.y)); // la normal equirectangular se degenera en los polos
     vec3 t = texture2D(normalMap, vUv).xyz * 2.0 - 1.0;
-    float ns = normalStrength * poleFade * (1.0 - wPolar) * (1.0 - 0.6 * near);
+    float ns = normalStrength * poleFade * (1.0 - wPolar);
     vec3 N = normalize(t.x * ns * east + t.y * ns * north + t.z * n);
-    float tone = 1.0;
-    if (near > 0.002) { // de lejos no se calcula el detalle (ahorra GPU)
-      vec3 g = craterSlope(vPos, px);
-      g -= n * dot(g, n);
-      N = normalize(N - g * near * 0.9);
-      tone = 1.0 + near * 0.22 * mottle(vPos, px);
-    }
+    float tone = 1.0; // sin cráteres ni manchas inventados: solo la textura real y el relieve LOLA
     vec3 L = normalize(mix(sunDir, normalize(vView + north * 0.6 + east * 0.3), inspect));
     float mu0 = max(dot(N, L), 0.0);
     float mu = max(dot(N, vView), 1e-3);
@@ -415,10 +410,7 @@ export default function LunarGlobe3D() {
         <div className="text-slate-400">{es ? " Arrastra = girar · rueda o +/− = acercar · clic = explorar ese punto" : " Drag = rotate · wheel or +/− = zoom · click = explore that point"}</div>
       </div>
       <div className="absolute right-3 top-3 z-10 flex gap-1">
-        <button onClick={() => setInspect((v) => !v)} title={inspect ? "Luz real del Sol" : "Luz de inspección"} aria-label="Cambiar iluminación"
-          className="flex items-center gap-1 rounded bg-slate-900/85 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700">
-          {inspect ? <Lightbulb className="h-3.5 w-3.5" /> : <SunIcon className="h-3.5 w-3.5" />} {inspect ? (es ? "Luz de inspección" : "Inspection light") : (es ? "Luz real" : "Real light")}
-        </button>
+        <Switch checked={inspect} onChange={setInspect} left={es ? "Luz real" : "Real light"} right={es ? "Inspección" : "Inspection"} label={es ? "Cambiar iluminación: luz real o luz de inspección" : "Switch lighting: real or inspection light"} />
       </div>
       <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-1">
         <button className={btn} aria-label={es ? "Acercar" : "Zoom in"} title={es ? "Acercar" : "Zoom in"} onClick={() => controls.current && zoomBy(controls.current, 0.55)}><Plus className="h-4 w-4" /></button>
@@ -432,7 +424,7 @@ export default function LunarGlobe3D() {
       </div>
       <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded bg-slate-900/80 px-2 py-1 font-mono text-[11px] text-slate-300">
         <span ref={coord}>—</span>
-        {focus && <span className="ml-2 font-sans text-slate-400">{es ? "· cráteres pequeños ilustrativos; el cálculo usa el relieve LOLA real" : "· small craters are illustrative; maths use real LOLA terrain"}</span>}
+        {focus && <span className="ml-2 font-sans text-slate-400">{es ? "· al acercar solo se ve el detalle real de LROC y LOLA; no se añaden cráteres" : "· zooming shows only the real LROC and LOLA detail; no craters are added"}</span>}
       </div>
       {busy ? (
         <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-slate-900/90 px-4 py-1.5 text-xs text-[#e6d3ad]">

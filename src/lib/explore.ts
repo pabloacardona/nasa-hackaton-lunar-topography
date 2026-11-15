@@ -44,7 +44,7 @@ export async function applyCell(lat: number, lon: number, label?: ScenarioLabel)
   await st.setCustomCoords(label ?? st.activeLabel, lat, lon, `Celda panal (${lat.toFixed(3)}°, ${lon.toFixed(2)}°)`);
 }
 
-/** «Ir aquí»: mueve la nave a la celda y recalcula el panal alrededor de ese punto nuevo. */
+/** «Ir aquí»: mueve el lander a la celda y recalcula el panal alrededor de ese punto nuevo. */
 export async function goToCell(lat: number, lon: number, label?: ScenarioLabel) {
   await applyCell(lat, lon, label);
   const sc = useMissionStore.getState().getScenario(label ?? useMissionStore.getState().activeLabel);

@@ -15,6 +15,7 @@ import { honeyScore } from "@/lib/honeycomb";
 import { exploreAt } from "@/lib/explore";
 import { generateMissionBrief } from "@/lib/brief";
 import { runNarratedDemo } from "@/lib/demo";
+import { speakText } from "@/lib/voice";
 import { ApprovalCard, ScenarioCompareCard, WindowsCard } from "./ChatCards";
 import { GLOSSARY } from "@/lib/glossary";
 
@@ -283,10 +284,7 @@ export default function MissionVoiceAgent() {
     const text = typeof last?.content === "string" ? last.content : "";
     if (!last || last.id === lastSpoken.current || !text) return;
     lastSpoken.current = last.id;
-    const u = new SpeechSynthesisUtterance(text.replace(/[*#_`|]/g, ""));
-    u.lang = st.lang === "es" ? "es-ES" : "en-US";
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
+    void speakText(text, st.lang === "es" ? "es" : "en");
   }, [messages, isLoading, speak, st.lang]);
 
   return null;

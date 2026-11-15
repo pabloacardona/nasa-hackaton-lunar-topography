@@ -1,7 +1,9 @@
 "use client";
+import Image from "next/image";
 import { useState } from "react";
-import { Box, Clapperboard, Compass, Copy, FileText, Plus, Rocket, Satellite, Settings, Square, X } from "lucide-react";
+import { Box, Clapperboard, Compass, Copy, FileText, Plus, Satellite, Settings, Square, X } from "lucide-react";
 import { effectiveStart, useMissionStore } from "@/store/useMissionStore";
+import Switch from "@/components/ui/Switch";
 import { SCENARIO_COLORS, type Scenario } from "@/lib/types";
 import { MISSION_PROFILES } from "@/lib/lunarMath";
 import { useGfxStore, useTier } from "@/store/useGfxStore";
@@ -121,13 +123,18 @@ export default function ScenarioSelector() {
 
   return (
     <header className="flex flex-col gap-3" id="tour-scenarios">
-      <div className="card flex flex-wrap items-center gap-3 bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-[#2a2238]/70 px-4 py-3">
-        <Rocket className="floaty h-9 w-9 text-[#c4d6e6]" aria-hidden />
-        <div>
-          <h1 className="font-display text-2xl font-extrabold leading-none tracking-wide text-white">Lunar Mission Navigator</h1>
-          <p className="text-sm font-semibold text-[#c4d6e6]">{kid ? (es ? "¡Encuentra el mejor lugar para alunizar! " : "Find the best place to land on the Moon! ") : t("appSubtitle")}</p>
+      <div className="flex flex-col items-center gap-3 px-2 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Image src="/emblem.png" alt="" aria-hidden width={1536} height={1024} className="h-12 w-auto drop-shadow-[0_0_10px_rgba(120,190,255,0.35)]" />
+          <div>
+            <h1 className="font-title text-2xl leading-none tracking-wide text-white">Lunar Mission Navigator</h1>
+            <p className="text-sm font-semibold text-[#c4d6e6]">{kid ? (es ? "¡Encuentra el mejor lugar para alunizar! " : "Find the best place to land on the Moon! ") : t("appSubtitle")}</p>
+          </div>
+        <Image src="/space-apps-logo.png" alt="NASA Space Apps Challenge" width={440} height={172} className="ml-1 h-10 w-auto self-center opacity-95" />
+        <span className="self-center max-w-[15rem] text-xs font-semibold leading-snug text-[#c4d6e6]">{es ? "Proyecto realizado para la hackatón NASA Space Apps 2026, 14 y 15 de noviembre" : "Project built for the NASA Space Apps 2026 hackathon, November 14–15"}</span>
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2 text-xs">
+      </div>
+      <div className="card flex flex-wrap items-center justify-center gap-2 px-3 py-2 text-xs bg-slate-900/70 border border-slate-700/60">
           <button type="button" onClick={() => setTourStep(0)} title={es ? "Recorrido guiado por la página" : "Guided tour of the page"} className="btn-fun border-[#6f93b5] bg-[#4f7396] hover:bg-[#5b82aa]"><Compass className="h-4 w-4" aria-hidden /> {es ? "Enséñame" : "Show me"}</button>
           {demoRunning ? (
             <button type="button" onClick={cancelDemo} title={es ? "Detener la demo" : "Stop the demo"} className="btn-fun border-[#b86b6e] bg-[#884a4e] hover:bg-[#9a5559]"><Square className="h-4 w-4" aria-hidden /> {es ? "Detener" : "Stop"}</button>
@@ -143,9 +150,7 @@ export default function ScenarioSelector() {
               </button>
             ))}
           </div>
-          <button onClick={() => setLang(es ? "en" : "es")} className="rounded-full border-2 border-slate-600 bg-slate-800 px-3 py-1.5 font-bold" aria-label="Idioma / Language">
-            {es ? "EN" : "ES"}
-          </button>
+          <Switch checked={!es} onChange={(v) => setLang(v ? "en" : "es")} left="ES" right="EN" label={es ? "Cambiar idioma a inglés" : "Switch language to Spanish"} />
           <details className="relative">
             <summary className="flex cursor-pointer list-none items-center gap-1 rounded-full border-2 border-slate-600 bg-slate-800 px-3 py-1.5 font-bold"><Settings className="h-4 w-4" /> {es ? "Ajustes" : "Settings"}</summary>
             <div className="card pop absolute right-0 z-40 mt-2 flex w-72 flex-col gap-2 p-3 shadow-2xl">
@@ -179,8 +184,7 @@ export default function ScenarioSelector() {
             </div>
           </details>
         </div>
-      </div>
-      <Collapsible id="sec-scenarios" emoji="" tint="#9d8fc2" title={kid ? (es ? "Mis lugares para comparar" : "My places to compare") : (es ? "Escenarios: sitio, fecha y retraso" : "Scenarios: site, date and delay")}
+      <Collapsible id="sec-scenarios" tint="#9d8fc2" title={kid ? (es ? "Mis lugares para comparar" : "My places to compare") : (es ? "Escenarios: sitio, fecha y retraso" : "Scenarios: site, date and delay")}
         summary={scenarios.map((sc) => (
           <span key={sc.label} className="rounded-full bg-slate-800 px-2 py-0.5"><b style={{ color: SCENARIO_COLORS[sc.label] }}>{sc.label}</b> {sc.siteName}</span>
         ))}>

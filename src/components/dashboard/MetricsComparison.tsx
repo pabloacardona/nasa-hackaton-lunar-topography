@@ -24,9 +24,9 @@ const Card = memo(function Card({ sc, hour }: { sc: Scenario; hour: number }) {
   const m = sc.metrics;
   if (!h || !m) return <div className="card flex-1 p-4 text-slate-400"> {t("loading")}</div>;
   const v = {
-    VIABLE: { cls: "from-[#7fb39a] to-[#b8cc98] text-black glow-ok", emoji: "", kid: es ? "¡Sí se puede alunizar!" : "Yes, we can land!", pro: t("viable") },
-    RELAY_REQUIRED: { cls: "from-[#c9a66b] to-[#d8c07a] text-black", emoji: "", kid: es ? "Se puede, pero con un satélite ayudante" : "Possible, with a helper satellite", pro: t("relay") },
-    CRITICAL_FREEZE_RISK: { cls: "from-[#9a5559] to-[#b86b78] text-white", emoji: "", kid: es ? "¡Peligro! Aquí la nave se congela" : "Danger! The lander freezes here", pro: t("freeze") },
+    VIABLE: { cls: "from-[#7fb39a] to-[#b8cc98] text-black glow-ok", kid: es ? "¡Sí se puede alunizar!" : "Yes, we can land!", pro: t("viable") },
+    RELAY_REQUIRED: { cls: "from-[#c9a66b] to-[#d8c07a] text-black", kid: es ? "Se puede, pero con un satélite ayudante" : "Possible, with a helper satellite", pro: t("relay") },
+    CRITICAL_FREEZE_RISK: { cls: "from-[#9a5559] to-[#b86b78] text-white", kid: es ? "¡Peligro! Aquí el lander se congela" : "Danger! The lander freezes here", pro: t("freeze") },
   }[m.viability];
   const apt = aptitude(m);
 
@@ -39,7 +39,6 @@ const Card = memo(function Card({ sc, hour }: { sc: Scenario; hour: number }) {
       </div>
       <InfoTip k="verdict" icon={false} className="block">
         <div className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r px-3 py-2 ${v.cls}`}>
-          <span className="text-2xl" aria-hidden>{v.emoji}</span>
           <div className="leading-tight">
             <div className="font-display text-lg font-extrabold">{kid ? v.kid : v.pro}</div>
             <div className="text-xs font-semibold opacity-80">{kid ? v.pro : m.viabilityReason}</div>
@@ -49,16 +48,16 @@ const Card = memo(function Card({ sc, hour }: { sc: Scenario; hour: number }) {
       {kid && <p className="mt-1 text-xs text-slate-400">{m.viabilityReason}</p>}
 
       <div className="mt-2 grid grid-cols-2 gap-2" aria-live="polite">
-        <Meter k="hoursToSunset" emoji="" color="#c9a25e" label={kid ? (es ? "Luz del Sol" : "Sunlight") : (es ? "Sol restante" : "Sun left")}
+        <Meter k="hoursToSunset" color="#c9a25e" label={kid ? (es ? "Luz del Sol" : "Sunlight") : (es ? "Sol restante" : "Sun left")}
           value={h.sunVisible ? `${h.hoursToSunset} h` : es ? "Sin Sol" : "No Sun"} sub={kid ? (h.sunVisible ? (es ? "de luz seguidas" : "of light in a row") : (es ? "está de noche" : "it is night")) : undefined}
           pct={h.sunVisible ? (h.hoursToSunset / missionHours) * 100 : 0} bad={!h.sunVisible} />
-        <Meter k="hoursToEarthset" emoji="" color="#7ab8c4" label={kid ? (es ? "Llamada a la Tierra" : "Call to Earth") : (es ? "Señal Tierra (DTE)" : "Earth link (DTE)")}
+        <Meter k="hoursToEarthset" color="#7ab8c4" label={kid ? (es ? "Llamada a la Tierra" : "Call to Earth") : (es ? "Señal Tierra (DTE)" : "Earth link (DTE)")}
           value={h.earthVisible ? `${h.hoursToEarthset} h` : es ? "Sin señal" : "No link"} sub={kid ? (h.earthVisible ? (h.dte === "degraded" ? (es ? "señal débil" : "weak signal") : (es ? "de señal seguidas" : "of signal in a row")) : (es ? "una montaña la tapa" : "a mountain blocks it")) : undefined}
           pct={h.earthVisible ? (h.hoursToEarthset / missionHours) * 100 : 0} bad={!h.earthVisible} warn={h.dte === "degraded"} />
-        <Meter k="battery" emoji="" color="#8fb07a" label={es ? "Batería" : "Battery"} value={`${h.socPct.toFixed(0)} %`}
+        <Meter k="battery" color="#8fb07a" label={es ? "Batería" : "Battery"} value={`${h.socPct.toFixed(0)} %`}
           sub={kid ? (h.socPct > 60 ? (es ? "¡bien cargada!" : "well charged!") : h.socPct > 0 ? (es ? "se está gastando" : "running down") : (es ? "¡vacía!" : "empty!")) : undefined}
           pct={h.socPct} bad={h.socPct <= 0} warn={h.socPct < 25} />
-        <Meter k="aptitude" emoji="" color="#a88bb8" label={kid ? (es ? "Puntaje del lugar" : "Place score") : (es ? "Aptitud" : "Suitability")} value={`${apt} / 100`}
+        <Meter k="aptitude" color="#a88bb8" label={kid ? (es ? "Puntaje del lugar" : "Place score") : (es ? "Aptitud" : "Suitability")} value={`${apt} / 100`}
           sub={kid ? (apt >= 65 ? (es ? "¡excelente lugar!" : "great place!") : apt >= 35 ? (es ? "más o menos" : "so-so") : (es ? "mejor busca otro" : "try another")) : undefined}
           pct={apt} bad={apt < 35} warn={apt < 65} />
       </div>
@@ -81,12 +80,12 @@ const Card = memo(function Card({ sc, hour }: { sc: Scenario; hour: number }) {
   );
 });
 
-function Meter({ k, emoji, label, value, sub, pct, color, bad, warn }: { k: GlossaryKey; emoji: string; label: string; value: string; sub?: string; pct: number; color: string; bad?: boolean; warn?: boolean }) {
+function Meter({ k, label, value, sub, pct, color, bad, warn }: { k: GlossaryKey; label: string; value: string; sub?: string; pct: number; color: string; bad?: boolean; warn?: boolean }) {
   const c = bad ? "#b86b6e" : warn ? "#f59e0b" : color;
   return (
     <div className={`rounded-2xl p-2 ${bad ? "bg-[#2e1a1c]/70" : "bg-slate-800/80"}`}>
       <InfoTip k={k}>
-        <span className="flex items-center gap-1 text-xs font-bold text-slate-300"><span className="text-base" aria-hidden>{emoji}</span>{label}</span>
+        <span className="flex items-center gap-1 text-xs font-bold text-slate-300">{label}</span>
       </InfoTip>
       <div className="flex items-baseline gap-1.5">
         <span className="font-display text-2xl font-extrabold leading-tight text-white">{value}</span>

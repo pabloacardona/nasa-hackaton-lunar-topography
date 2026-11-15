@@ -10,6 +10,7 @@ import { exploreAt, goToCell } from "@/lib/explore";
 import { SCENARIO_COLORS } from "@/lib/types";
 import InfoTip from "@/components/ui/InfoTip";
 import { Stars } from "@/components/dashboard/MetricsComparison";
+import PolarMap from "@/components/analysis/PolarMap";
 
 const DIRS = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
 const dirOf = (n: number, e: number) => DIRS[Math.round(((Math.atan2(e, n) * 180) / Math.PI + 360) % 360 / 45) % 8];
@@ -129,6 +130,13 @@ export default function HoneycombPanel() {
       {!honey && !busy && !err && (
         <p className="text-xs text-slate-500">{es ? " Aún no has explorado. Toca la Luna cerca del polo sur (la parte de abajo)." : " Nothing explored yet. Tap the Moon near the south pole (the bottom part)."}</p>
       )}
+      <details className="group rounded-lg border border-slate-700/70 bg-slate-950/40 px-3 py-2">
+        <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-bold text-slate-200">
+          <span>{es ? "Mapa del polo sur (opcional)" : "South pole map (optional)"}</span>
+          <span className="text-slate-400 group-open:rotate-180 transition-transform" aria-hidden>▾</span>
+        </summary>
+        <div className="mt-2"><PolarMap /></div>
+      </details>
     </section>
   );
 }

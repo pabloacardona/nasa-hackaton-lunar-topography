@@ -1,7 +1,6 @@
 "use client";
 // Mapa polar sur (estereográfico, 80°S–90°S) con relieve LOLA. Clic = colocar el escenario activo.
 import { useState } from "react";
-import { Map as MapIcon } from "lucide-react";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
 import { SCENARIO_COLORS } from "@/lib/types";
@@ -37,8 +36,7 @@ export default function PolarMap() {
 
   const polarSites = dataset?.sites.filter((s) => s.lat <= -80) ?? [];
   return (
-    <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm" id="tour-polar">
-      <h2 className="mb-1 flex items-center gap-1 font-semibold text-slate-200"><MapIcon className="h-4 w-4 text-[#7fa6c9]" aria-hidden /> {t("polarTitle")}</h2>
+    <div id="tour-polar" className="text-sm">
       <p className="mb-2 text-xs text-slate-400">{t("polarHelp")} → <b style={{ color: SCENARIO_COLORS[activeLabel] }}>{activeLabel}</b></p>
       <svg viewBox={`0 0 ${VB} ${VB}`} className="mx-auto h-auto w-full max-w-[400px] cursor-crosshair" role="img" aria-label="Mapa del polo sur lunar"
         onMouseMove={(e) => setHover(fromEvent(e))} onMouseLeave={() => setHover(null)}
@@ -75,6 +73,6 @@ export default function PolarMap() {
         })}
       </svg>
       <p className="mt-1 h-4 text-[11px] text-slate-400">{hover ? `${hover.lat.toFixed(3)}°, ${hover.lon.toFixed(2)}°E` : "Relieve: LOLA LDEM 16 px/° (NASA)."}</p>
-    </section>
+    </div>
   );
 }

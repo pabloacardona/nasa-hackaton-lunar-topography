@@ -10,6 +10,7 @@ import { Bot, ChevronDown, Mic, MicOff, Send, Sparkles, Volume2, VolumeX } from 
 import { useMissionStore } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
 import { GUIDE_QUESTIONS, localAnswer } from "@/lib/helpBot";
+import { speakText } from "@/lib/voice";
 
 type SR = { lang: string; interimResults: boolean; start: () => void; stop: () => void; onresult: ((e: { results: { 0: { transcript: string } }[] }) => void) | null; onend: (() => void) | null };
 
@@ -28,10 +29,7 @@ function Rich({ text }: { text: string }) {
 
 function say(text: string) {
   if (typeof window === "undefined" || !text) return;
-  const u = new SpeechSynthesisUtterance(text.replace(/[*#_`|]/g, ""));
-  u.lang = useMissionStore.getState().lang === "es" ? "es-ES" : "en-US";
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
+  void speakText(text, useMissionStore.getState().lang === "es" ? "es" : "en");
 }
 
 export function askLocal(q: string) {
@@ -125,8 +123,8 @@ export default function ChatDock({ instructions }: { instructions: string }) {
   return (
     <div id="tour-chat" className="chat-dock fixed bottom-3 left-1/2 z-50 w-[min(780px,calc(100vw-1.5rem))] -translate-x-1/2">
       {open && (
-        <div className="pop absolute bottom-full mb-2 w-full overflow-hidden rounded-3xl border-2 border-[#4f7396]/70 bg-slate-950 shadow-2xl shadow-[#213548]/50">
-          <div className="flex items-center gap-2 border-b border-slate-800 bg-gradient-to-r from-[#213548]/70 to-[#3e3050]/50 px-3 py-2">
+        <div className="glass-panel absolute bottom-full mb-2 w-full overflow-hidden rounded-2xl">
+          <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-2">
             <Bot className="h-5 w-5" aria-hidden />
             <span className="font-display text-base font-bold text-white">Luna-Bot</span>
             <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${llm ? "bg-[#7e6291] text-white" : "bg-slate-700 text-slate-200"}`}>
@@ -134,9 +132,9 @@ export default function ChatDock({ instructions }: { instructions: string }) {
             </span>
             <button onClick={() => setChatOpen(false)} className="ml-auto rounded-full bg-slate-800 p-1.5 text-slate-200 hover:bg-slate-700" aria-label={es ? "Cerrar chat" : "Close chat"}><ChevronDown className="h-4 w-4" /></button>
           </div>
-          <div className="flex gap-1.5 overflow-x-auto px-3 py-2" aria-label={es ? "Preguntas sugeridas" : "Suggested questions"}>
+          <div className="flex flex-wrap gap-1.5 px-3 py-2" aria-label={es ? "Preguntas sugeridas" : "Suggested questions"}>
             {GUIDE_QUESTIONS.map((q) => (
-              <button key={q[0]} onClick={() => ask(q[es ? 0 : 1])} className="shrink-0 rounded-full border border-[#44658a]/70 bg-[#172534]/70 px-3 py-1 text-xs font-semibold text-slate-200 hover:bg-[#3a5a7a]">
+              <button key={q[0]} onClick={() => ask(q[es ? 0 : 1])} className="rounded-full border border-[#7dd3fc]/25 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-[#e0f2fe] hover:bg-[#7dd3fc]/15">
                 {q[es ? 0 : 1]}
               </button>
             ))}
@@ -152,7 +150,7 @@ export default function ChatDock({ instructions }: { instructions: string }) {
         </div>
       )}
       <form onSubmit={(e) => { e.preventDefault(); ask(input); setInput(""); }}
-        className="flex items-center gap-2 rounded-full border-2 border-[#7fa6c9]/80 bg-slate-900/95 p-1.5 shadow-xl shadow-[#213548]/60 backdrop-blur">
+        className="glass-panel flex items-center gap-2 rounded-full p-1.5">
         <button type="button" onClick={() => setChatOpen(!open)} className={`${round} bg-gradient-to-br from-[#7fa6c9] to-[#9a7aad] text-xl`} aria-expanded={open} aria-label={es ? "Abrir o cerrar el chat con Luna-Bot" : "Toggle chat with Luna-Bot"} title="Luna-Bot">
           <Bot className={`h-6 w-6 ${open ? "" : "wiggle"}`} aria-hidden />
         </button>
