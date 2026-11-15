@@ -1,77 +1,85 @@
 "use client";
+// Tarjetas simplificadas: veredicto + 4 indicadores clave. El resto, en "Más detalles".
+// Cada número tiene su ayuda flotante (qué es, cómo se calcula, para qué sirve, cómo usarlo).
 import { memo } from "react";
-import { BatteryCharging, Radio, Sun, Thermometer, Timer, Zap } from "lucide-react";
+import { BatteryCharging, Radio, Sparkles, Timer } from "lucide-react";
 import { useMissionStore } from "@/store/useMissionStore";
 import { SCENARIO_COLORS, type Scenario } from "@/lib/types";
+import { aptitude } from "@/lib/lunarMath";
+import type { GlossaryKey } from "@/lib/glossary";
+import InfoTip from "@/components/ui/InfoTip";
 import { useT } from "@/lib/i18n";
 
-const Card = memo(function Card({ sc, hour, ref0 }: { sc: Scenario; hour: number; ref0: Scenario | undefined }) {
+const Card = memo(function Card({ sc, hour }: { sc: Scenario; hour: number }) {
   const t = useT();
-  const mode = useMissionStore((s) => s.audienceMode);
+  const lang = useMissionStore((s) => s.lang);
+  const es = lang === "es";
   const h = sc.timeline[hour];
   const m = sc.metrics;
   if (!h || !m) return <div className="flex-1 rounded-xl bg-slate-900/70 p-3 text-slate-500">{t("loading")}</div>;
-  const badge = {
-    VIABLE: { cls: "bg-emerald-600", txt: t("viable") },
-    RELAY_REQUIRED: { cls: "bg-amber-500 text-black", txt: t("relay") },
-    CRITICAL_FREEZE_RISK: { cls: "bg-red-600", txt: t("freeze") },
+  const v = {
+    VIABLE: { cls: "bg-emerald-600", txt: "🟢 " + t("viable") },
+    RELAY_REQUIRED: { cls: "bg-amber-500 text-black", txt: "🟡 " + t("relay") },
+    CRITICAL_FREEZE_RISK: { cls: "bg-red-600", txt: "🔴 " + t("freeze") },
   }[m.viability];
-  const edu = mode === "educator";
-  const delta = (v: number, r: number | undefined, unit = "") =>
-    ref0 && ref0.label !== sc.label && r !== undefined ? (
-      <span className={`ml-1 text-[10px] ${v - r >= 0 ? "text-emerald-400" : "text-red-400"}`}>{v - r >= 0 ? "+" : ""}{v - r}{unit}</span>
-    ) : null;
+  const apt = aptitude(m);
 
   return (
     <div className="min-w-[280px] flex-1 rounded-xl border bg-slate-900/70 p-3 text-sm" style={{ borderColor: SCENARIO_COLORS[sc.label] + "66" }}>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-semibold text-slate-200">{sc.label} · {sc.siteName}</span>
-        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${badge.cls}`} title={m.viabilityReason}>{badge.txt}</span>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span className="font-semibold text-slate-200">
+          <span style={{ color: SCENARIO_COLORS[sc.label] }}>●</span> {sc.label} · {sc.siteName}
+        </span>
+        <InfoTip k="verdict" icon={false}>
+          <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${v.cls}`}>{v.txt}</span>
+        </InfoTip>
       </div>
-      <div className="grid grid-cols-2 gap-2 xl:grid-cols-3" aria-live="polite">
-        <Kpi icon={<Timer className="h-4 w-4 text-amber-300" />} label={edu ? t("lightLeft") : t("hoursToSunset")}
-          value={h.sunVisible ? `${h.hoursToSunset} h` : t("inShadow")}
-          hint={edu ? (h.sunVisible ? `☀ ${h.hoursToSunset} h` : "⛰ ☀") : `terreno@Sol ${h.terrainAtSun.toFixed(1)}°`} />
-        <Kpi icon={<Radio className="h-4 w-4 text-cyan-300" />} label={edu ? t("earthSignal") : t("hoursToEarthset")}
-          value={h.earthVisible ? `${h.hoursToEarthset} h` : t("noDte")}
-          hint={`🌍 ${h.earthEl.toFixed(2)}° · margen ${h.earthMarginDeg.toFixed(2)}°${h.dte === "degraded" ? ` · ${t("degraded")}` : ""}`} />
-        <Kpi icon={<Sun className="h-4 w-4 text-yellow-300" />} label={t("solarEl")} value={`${h.sunEl.toFixed(2)}°`}
-          hint={`az ${h.sunAz.toFixed(1)}° · pico ${m.peakSunEl}°`} />
-        <Kpi icon={<Zap className="h-4 w-4 text-emerald-300" />} label={t("power")} value={`${h.solarPowerWM2} W/m²`}
-          hint={`media ${m.avgPowerWM2} W/m² · ${sc.panelType === "vertical" ? "panel vertical" : "panel horizontal"}`} />
-        <Kpi icon={<BatteryCharging className="h-4 w-4 text-lime-300" />} label={t("soc")} value={`${h.socPct.toFixed(0)} %`}
-          hint={m.batteryDepletedAtH !== null ? `⚠ agotada en T+${m.batteryDepletedAtH} h` : `mín ${m.minSocPct.toFixed(0)} %`} warn={h.socPct < 20} />
-        <Kpi icon={<Thermometer className="h-4 w-4 text-rose-300" />} label={t("temp")} value={`${h.surfaceTempC} °C`}
-          hint={`${m.tempMinC} … ${m.tempMaxC} °C (modelo simple)`} />
+      <p className="mb-2 text-xs text-slate-400">{m.viabilityReason}</p>
+
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4" aria-live="polite">
+        <Big k="hoursToSunset" icon={<Timer className="h-4 w-4 text-amber-300" />} label={es ? "Sol restante" : "Sun left"}
+          value={h.sunVisible ? `${h.hoursToSunset} h` : es ? "Sin Sol" : "No Sun"} bad={!h.sunVisible} />
+        <Big k="hoursToEarthset" icon={<Radio className="h-4 w-4 text-cyan-300" />} label={es ? "Señal Tierra" : "Earth link"}
+          value={h.earthVisible ? `${h.hoursToEarthset} h` : es ? "Sin señal" : "No link"} bad={!h.earthVisible} warn={h.dte === "degraded"} />
+        <Big k="battery" icon={<BatteryCharging className="h-4 w-4 text-lime-300" />} label={es ? "Batería" : "Battery"}
+          value={`${h.socPct.toFixed(0)} %`} bad={h.socPct <= 0} warn={h.socPct < 25} />
+        <Big k="aptitude" icon={<Sparkles className="h-4 w-4 text-yellow-300" />} label={es ? "Aptitud" : "Suitability"} value={`${apt} / 100`} bad={apt < 35} warn={apt < 65} />
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-slate-300 lg:grid-cols-6">
-        <Stat k={t("sunlight")} v={<>{m.sunlightPct}%{delta(m.sunlightPct, ref0?.metrics?.sunlightPct, "")}</>} />
-        <Stat k="DTE" v={<>{m.dtePct}%{delta(m.dtePct, ref0?.metrics?.dtePct)}</>} />
-        <Stat k={t("golden")} v={<>{m.goldenPct}%{delta(m.goldenPct, ref0?.metrics?.goldenPct)}</>} />
-        <Stat k="DTE multipath" v={`${m.dteDegradedPct}%`} />
-        <Stat k={t("longestShadow")} v={`${m.longestShadowH} h`} />
-        <Stat k={t("minSoc")} v={`${m.minSocPct.toFixed(0)}%`} />
-      </div>
-      <p className="mt-2 text-xs text-slate-400">{m.viabilityReason}</p>
+
+      <details className="mt-2 text-xs text-slate-300">
+        <summary className="cursor-pointer select-none text-slate-400 hover:text-slate-200">{es ? "Más detalles" : "More details"}</summary>
+        <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3">
+          <Small k="sunlightPct" label={es ? "% con Sol" : "% sunlight"} value={`${m.sunlightPct} %`} />
+          <Small k="dtePct" label={es ? "% con Tierra" : "% Earth"} value={`${m.dtePct} %${m.dteDegradedPct ? ` (${m.dteDegradedPct} % débil)` : ""}`} />
+          <Small k="goldenPct" label={es ? "Sol y Tierra" : "Sun & Earth"} value={`${m.goldenPct} %`} />
+          <Small k="longestShadow" label={es ? "Sombra más larga" : "Longest shadow"} value={`${m.longestShadowH} h`} />
+          <Small k="solarElevation" label={es ? "Altura del Sol" : "Sun elevation"} value={`${h.sunEl.toFixed(2)}°`} />
+          <Small k="power" label={es ? "Energía solar" : "Solar power"} value={`${h.solarPowerWM2} W/m²`} />
+          <Small k="temperature" label={es ? "Temperatura suelo" : "Surface temp."} value={`${h.surfaceTempC} °C`} />
+          <Small k="battery" label={es ? "Batería mínima" : "Min battery"} value={`${m.minSocPct.toFixed(0)} %`} />
+          <Small k="horizonSource" label={es ? "Relieve" : "Terrain"} value={sc.horizonSource.split(",")[0]} />
+        </div>
+      </details>
     </div>
   );
 });
 
-function Kpi({ icon, label, value, hint, warn }: { icon: React.ReactNode; label: string; value: string; hint: string; warn?: boolean }) {
+function Big({ k, icon, label, value, bad, warn }: { k: GlossaryKey; icon: React.ReactNode; label: string; value: string; bad?: boolean; warn?: boolean }) {
   return (
-    <div className={`rounded-lg p-2 ${warn ? "bg-red-950/70" : "bg-slate-800/80"}`}>
-      <div className="flex items-center gap-1 text-[11px] uppercase text-slate-400">{icon}{label}</div>
-      <div className="text-lg font-bold text-slate-100">{value}</div>
-      <div className="text-[11px] text-slate-400">{hint}</div>
+    <div className={`rounded-lg p-2 ${bad ? "bg-red-950/70" : warn ? "bg-amber-950/50" : "bg-slate-800/80"}`}>
+      <InfoTip k={k}>
+        <span className="flex items-center gap-1 text-[11px] uppercase text-slate-400">{icon}{label}</span>
+      </InfoTip>
+      <div className="text-xl font-bold text-slate-100">{value}</div>
     </div>
   );
 }
 
-function Stat({ k, v }: { k: string; v: React.ReactNode }) {
+function Small({ k, label, value }: { k: GlossaryKey; label: string; value: string }) {
   return (
     <div className="rounded bg-slate-800/50 px-2 py-1">
-      <div className="text-[10px] uppercase text-slate-500">{k}</div>
-      <div className="font-semibold">{v}</div>
+      <InfoTip k={k}><span className="text-[10px] uppercase text-slate-500">{label}</span></InfoTip>
+      <div className="truncate font-semibold" title={value}>{value}</div>
     </div>
   );
 }
@@ -82,7 +90,7 @@ export default function MetricsComparison() {
   return (
     <section className="grid grid-cols-1 gap-2 lg:grid-cols-2" id="tour-metrics" aria-label="KPIs">
       {scenarios.map((sc) => (
-        <Card key={sc.label} sc={sc} hour={hour} ref0={scenarios[0]} />
+        <Card key={sc.label} sc={sc} hour={hour} />
       ))}
     </section>
   );

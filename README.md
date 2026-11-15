@@ -66,3 +66,11 @@ Regenerar datos: `node scripts/generate_nasa_cache.mjs` (JPL, necesita internet)
 - **VFX**: Bloom HDR, GodRays (solo calidad alta), viñeta, grano, tone mapping ACES, haz DTE animado (verde/rojo + chispas al bloquearse), polvo lunar levitante, halo solar, atmósfera y fase real de la Tierra, luz cenicienta.
 - **Rendimiento**: `PerformanceMonitor` baja de HD a ligera si caen los FPS; DPR adaptativo; rocas instanciadas (1 draw call); terreno con densidad radial; texturas con anisotropía y mipmaps.
 - **Física visual**: la cresta del terreno coincide con el perfil de horizonte usado en el cálculo, así el Sol/Tierra quedan ocultos en 3D exactamente cuando el cálculo dice "no visible". Tamaños aparentes del Sol y la Tierra exagerados ~4× por legibilidad.
+
+## Novedades (v4)
+- **Ayuda en cada métrica**: pasa el mouse (o tabula) sobre el ícono ⓘ de cualquier KPI, gráfica o control para ver qué es, cómo se calcula, para qué sirve y cómo usarlo (`src/lib/glossary.ts`, `src/components/ui/InfoTip.tsx`).
+- **Hasta 4 vistas 3D**: chips A–D y botón «Ver los 4» encima de las vistas. Con 3–4 vistas se activa un modo compacto (menos resolución, sin polvo) para mantener la fluidez.
+- **Panal interactivo**: clic en la Luna (globo 3D) o en el mapa polar → se calculan 37 celdas, la cámara hace zoom y cada hexágono muestra su % de aptitud. «Usar → A» mueve el escenario a la celda elegida (`src/lib/explore.ts`).
+- **Lander detallado y rayos**: rayo Tierra (verde/violeta/rojo) desde la antena y rayo Sol hacia los paneles, cuyo color va de ámbar (Sol rasante) a blanco (Sol alto) y rojo si una montaña lo tapa.
+- **Datos simplificados**: 4 KPIs grandes + «Más detalles», línea de tiempo de 3 pistas, gráfica de batería/temperatura con zona de peligro, semáforo de estaciones.
+> La «aptitud» (0–100) es un índice de idoneidad (veredicto + ventana dorada + batería mínima), no una probabilidad estadística.

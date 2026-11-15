@@ -1,156 +1,110 @@
 "use client";
-// Selección de coordenadas con metodología de panal de abeja (retícula hexagonal).
-import { useMemo, useState } from "react";
-import { Hexagon, Loader2 } from "lucide-react";
-import { effectiveStart, useMissionStore } from "@/store/useMissionStore";
+// Panal de abeja simplificado: instrucciones, separación, progreso y ranking de las mejores celdas.
+// El cálculo se lanza con un clic en la Luna (globo) o en el mapa polar.
+import { useMemo } from "react";
+import { Crosshair, Hexagon, Loader2 } from "lucide-react";
+import { useMissionStore } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
-import { computeHoneycomb, honeyScore, honeyValue, type HoneyMetric, type HoneyResult } from "@/lib/honeycomb";
-import { SCENARIO_COLORS, SCENARIO_LABELS } from "@/lib/types";
-import { useT } from "@/lib/i18n";
+import { aptitudeColor } from "@/lib/lunarMath";
+import { applyCell, exploreAt } from "@/lib/explore";
+import { SCENARIO_COLORS } from "@/lib/types";
+import InfoTip from "@/components/ui/InfoTip";
 
-const SQ3 = Math.sqrt(3);
-
-function colorFor(v: number, metric: HoneyMetric) {
-  const t = Math.max(0, Math.min(1, v / 100));
-  // rojo -> ámbar -> verde (perceptualmente ordenado, distinguible en daltonismo por luminancia)
-  const stops = metric === "dte" ? ["#3b0764", "#6d28d9", "#22d3ee"] : ["#7f1d1d", "#d97706", "#22c55e"];
-  const [a, b] = t < 0.5 ? [stops[0], stops[1]] : [stops[1], stops[2]];
-  const k = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-  const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-  const [r1, g1, b1] = p(a), [r2, g2, b2] = p(b);
-  return `rgb(${Math.round(r1 + (r2 - r1) * k)},${Math.round(g1 + (g2 - g1) * k)},${Math.round(b1 + (b2 - b1) * k)})`;
-}
+const DIRS = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+const dirOf = (n: number, e: number) => DIRS[Math.round(((Math.atan2(e, n) * 180) / Math.PI + 360) % 360 / 45) % 8];
 
 export default function HoneycombPanel() {
-  const t = useT();
+  const es = useMissionStore((s) => s.lang) === "es";
   const activeLabel = useMissionStore((s) => s.activeLabel);
-  const scenarios = useMissionStore((s) => s.scenarios);
-  const missionHours = useMissionStore((s) => s.missionHours);
-  const power = useMissionStore((s) => s.power);
-  const { setCustomCoords, addScenario } = useMissionStore.getState();
+  const active = useMissionStore((s) => s.scenarios.find((x) => x.label === s.activeLabel));
   const honey = useUiStore((s) => s.honey);
-  const setHoney = useUiStore((s) => s.setHoney);
-  const [spacing, setSpacing] = useState(1);
-  const [rings, setRings] = useState(3);
-  const [metric, setMetric] = useState<HoneyMetric>("golden");
-  const [busy, setBusy] = useState<[number, number] | null>(null);
-  const [sel, setSel] = useState<HoneyResult | null>(null);
-  const center = scenarios.find((s) => s.label === activeLabel) ?? scenarios[0];
+  const busy = useUiStore((s) => s.honeyBusy);
+  const err = useUiStore((s) => s.honeyError);
+  const spacing = useUiStore((s) => s.honeySpacingKm);
+  const selIdx = useUiStore((s) => s.honeySel);
+  const { setHoneySpacing, setHoneySel } = useUiStore.getState();
 
-  const run = async () => {
-    if (!center?.timeline.length) return;
-    setBusy([0, 1]);
-    setSel(null);
-    const results = await computeHoneycomb({
-      center: { lat: center.lat, lon: center.lon }, timeline: center.timeline, startUtc: effectiveStart(center),
-      rings, spacingKm: spacing, missionHours, power, panel: center.panelType, region: center.region,
-      onProgress: (d, n) => setBusy([d, n]),
-    });
-    setHoney({ center: center.label, spacingKm: spacing, results });
-    setBusy(null);
-  };
-
-  const results = useMemo(() => honey?.results ?? [], [honey]);
-  const best = useMemo(() => results.reduce<HoneyResult | null>((b, r) => (!b || honeyScore(r) > honeyScore(b) ? r : b), null), [results]);
-  const S = 26; // radio del hexágono en px
-  const R = Math.max(1, ...results.map((r) => r.cell.ring));
-  const size = (2 * R + 1) * S * SQ3 + S * 2;
-
-  const assign = async (label: string) => {
-    if (!sel) return;
-    let target = label;
-    if (label === "new") target = addScenario() ?? "";
-    if (!target) return;
-    const name = `Panal ${honey?.center}${sel.cell.ring ? ` · ${sel.cell.northKm.toFixed(1)}N ${sel.cell.eastKm.toFixed(1)}E km` : " · centro"}`;
-    await setCustomCoords(target as never, sel.lat, sel.lon, name);
-  };
+  const ranked = useMemo(() => (honey ? honey.results.map((r, i) => ({ r, i })).sort((a, b) => b.r.aptitude - a.r.aptitude) : []), [honey]);
+  const sel = selIdx != null && honey ? honey.results[selIdx] : null;
+  const center = honey?.results.find((r) => r.cell.ring === 0);
 
   return (
-    <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm" id="tour-honeycomb">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h2 className="flex items-center gap-1 font-semibold text-slate-200"><Hexagon className="h-4 w-4 text-amber-400" aria-hidden /> {t("honeyTitle")}</h2>
-        <span className="text-xs text-slate-400">· centro: <b style={{ color: SCENARIO_COLORS[center.label] }}>{center.label}</b> {center.siteName}</span>
-      </div>
-      <p className="mb-2 text-xs text-slate-400">{t("honeyHelp")}</p>
-      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
-        <label>{t("spacing")}{" "}
-          <select className="rounded bg-slate-800 px-1 py-0.5" value={spacing} onChange={(e) => setSpacing(Number(e.target.value))}>
-            {[0.5, 1, 2, 5].map((s) => <option key={s} value={s}>{s} km</option>)}
-          </select>
-        </label>
-        <label>{t("rings")}{" "}
-          <select className="rounded bg-slate-800 px-1 py-0.5" value={rings} onChange={(e) => setRings(Number(e.target.value))}>
-            {[2, 3, 4].map((r) => <option key={r} value={r}>{r} ({1 + 3 * r * (r + 1)} celdas)</option>)}
-          </select>
-        </label>
-        <label>{t("metric")}{" "}
-          <select className="rounded bg-slate-800 px-1 py-0.5" value={metric} onChange={(e) => setMetric(e.target.value as HoneyMetric)}>
-            <option value="golden">{t("golden")} %</option>
-            <option value="sun">{t("sunlight")} %</option>
-            <option value="dte">DTE %</option>
-            <option value="minSoc">{t("minSoc")} %</option>
-          </select>
-        </label>
-        <button onClick={run} disabled={!!busy} className="flex items-center gap-1 rounded bg-amber-600 px-3 py-1 font-semibold text-black hover:bg-amber-500 disabled:opacity-60">
-          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Hexagon className="h-3 w-3" />} {busy ? `${busy[0]}/${busy[1]}` : t("compute")}
-        </button>
-        {best && (
-          <span className="text-xs text-emerald-300">
-            Mejor celda: anillo {best.cell.ring} · {best.metrics.goldenPct}% dorada · {best.metrics.sunlightPct}% Sol · {best.metrics.viability === "VIABLE" ? "viable" : best.metrics.viability === "RELAY_REQUIRED" ? "relé" : "riesgo"}
-          </span>
+    <section className="flex h-full flex-col gap-2 rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm" id="tour-honeycomb">
+      <InfoTip k="honeycomb">
+        <h2 className="flex items-center gap-1 font-semibold text-slate-200"><Hexagon className="h-4 w-4 text-amber-400" aria-hidden /> {es ? "Panal de abeja" : "Honeycomb"}</h2>
+      </InfoTip>
+      <ol className="list-decimal pl-4 text-xs text-slate-400">
+        <li>{es ? "Haz clic en la Luna o en el mapa polar." : "Click on the Moon or the polar map."}</li>
+        <li>{es ? "Se calculan 37 puntos cercanos con su relieve real." : "37 nearby points are computed with real terrain."}</li>
+        <li>{es ? "Elige el hexágono verde con mayor %." : "Pick the greenest hexagon with the highest %."}</li>
+      </ol>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-slate-400">{es ? "Distancia entre puntos" : "Spacing"}:</span>
+        {[1, 2, 5].map((km) => (
+          <button key={km} onClick={() => setHoneySpacing(km)} aria-pressed={spacing === km} className={`rounded px-2 py-0.5 ${spacing === km ? "bg-amber-500 font-semibold text-black" : "bg-slate-800"}`}>{km} km</button>
+        ))}
+        {active && (
+          <button onClick={() => void exploreAt(active.lat, active.lon, { moveScenario: false })} disabled={!!busy}
+            className="ml-auto flex items-center gap-1 rounded bg-slate-700 px-2 py-0.5 hover:bg-slate-600 disabled:opacity-50">
+            <Crosshair className="h-3 w-3" /> {es ? "Alrededor de" : "Around"} {activeLabel}
+          </button>
         )}
       </div>
 
-      {results.length > 0 && (
-        <div className="flex flex-wrap items-start gap-4">
-          <svg viewBox={`${-size / 2} ${-size / 2} ${size} ${size}`} className="h-auto w-full max-w-[460px]" role="img" aria-label="Panal de abeja de coordenadas">
-            {results.map((r) => {
-              const cx = S * SQ3 * (r.cell.q + r.cell.r / 2);
-              const cy = -S * 1.5 * r.cell.r;
-              const pts = Array.from({ length: 6 }, (_, k) => {
-                const a = (Math.PI / 180) * (60 * k - 30);
-                return `${(cx + (S - 1.5) * Math.cos(a)).toFixed(1)},${(cy + (S - 1.5) * Math.sin(a)).toFixed(1)}`;
-              }).join(" ");
-              const v = honeyValue(r, metric);
-              const isBest = r === best, isSel = r === sel;
+      {busy && (
+        <div className="flex items-center gap-2 text-xs text-amber-200">
+          <Loader2 className="h-3 w-3 animate-spin" /> {busy.done}/{busy.total}
+          <div className="h-1.5 flex-1 overflow-hidden rounded bg-slate-700"><div className="h-full bg-amber-400 transition-all" style={{ width: `${(busy.done / busy.total) * 100}%` }} /></div>
+        </div>
+      )}
+      {err && <p className="text-xs text-red-300">{err}</p>}
+
+      {honey && !busy && (
+        <>
+          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+            <InfoTip k="aptitude"><span>{es ? "Aptitud de aterrizaje" : "Landing suitability"}</span></InfoTip>
+            <span className="h-2 flex-1 rounded" style={{ background: `linear-gradient(90deg, ${aptitudeColor(0)}, ${aptitudeColor(50)}, ${aptitudeColor(100)})` }} />
+            <span>0 → 100</span>
+          </div>
+          {center && (
+            <p className="text-xs text-slate-400">
+              {es ? "Punto elegido" : "Chosen point"}: <b style={{ color: aptitudeColor(center.aptitude) }}>{center.aptitude}%</b> · {es ? "mejor cercano" : "best nearby"}: <b style={{ color: aptitudeColor(ranked[0].r.aptitude) }}>{ranked[0].r.aptitude}%</b>
+            </p>
+          )}
+          <ul className="flex flex-col gap-1" aria-label="Mejores celdas">
+            {ranked.slice(0, 5).map(({ r, i }, k) => {
+              const dist = Math.hypot(r.cell.northKm, r.cell.eastKm);
               return (
-                <g key={`${r.cell.q},${r.cell.r}`} onClick={() => setSel(r)} className="cursor-pointer" role="button" aria-label={`Celda ${r.cell.q},${r.cell.r}: ${v}%`}>
-                  <polygon points={pts} fill={colorFor(v, metric)} stroke={isSel ? "#fff" : isBest ? "#fde047" : "#0f172a"} strokeWidth={isSel || isBest ? 3 : 1.5} />
-                  <text x={cx} y={cy + 4} textAnchor="middle" fontSize={11} fill="#fff" fontWeight={600} pointerEvents="none">{v.toFixed(0)}</text>
-                  {r.cell.ring === 0 && <text x={cx} y={cy - 9} textAnchor="middle" fontSize={8} fill="#fff" pointerEvents="none">●</text>}
-                  {r.metrics.viability === "CRITICAL_FREEZE_RISK" && <text x={cx} y={cy + 15} textAnchor="middle" fontSize={8} fill="#fecaca" pointerEvents="none">✕</text>}
-                </g>
+                <li key={i} className={`flex items-center gap-2 rounded px-2 py-1 text-xs ${selIdx === i ? "bg-slate-700" : "bg-slate-800/70"}`}>
+                  <button className="flex flex-1 items-center gap-2 text-left" onClick={() => setHoneySel(i)}>
+                    <span className="w-4 text-slate-500">{k + 1}</span>
+                    <span className="w-12 rounded px-1 text-center font-bold text-black" style={{ background: aptitudeColor(r.aptitude) }}>{r.aptitude}%</span>
+                    <span className="flex-1 text-slate-300">
+                      {dist < 0.01 ? (es ? "punto elegido" : "chosen point") : `${dist.toFixed(1)} km ${es ? "al" : "to"} ${dirOf(r.cell.northKm, r.cell.eastKm)}`}
+                      <span className="ml-1 text-slate-500">☀{r.metrics.sunlightPct}% 🌍{r.metrics.dtePct}%</span>
+                    </span>
+                  </button>
+                  <button onClick={() => void applyCell(r.lat, r.lon)} className="rounded px-2 py-0.5 font-semibold text-black" style={{ background: SCENARIO_COLORS[activeLabel] }}>
+                    {es ? "Usar" : "Use"} → {activeLabel}
+                  </button>
+                </li>
               );
             })}
-            <text x={0} y={-size / 2 + 12} textAnchor="middle" fontSize={10} fill="#94a3b8">N ↑ · separación {honey?.spacingKm} km</text>
-          </svg>
-          <div className="min-w-[220px] flex-1 text-xs text-slate-300">
-            {sel ? (
-              <>
-                <p className="font-semibold text-slate-100">Celda anillo {sel.cell.ring} · {sel.cell.northKm.toFixed(2)} km N, {sel.cell.eastKm.toFixed(2)} km E</p>
-                <p>{sel.lat.toFixed(4)}°, {sel.lon.toFixed(3)}° · horizonte máx {sel.horizonMaxDeg.toFixed(2)}°</p>
-                <ul className="my-2 grid grid-cols-2 gap-1">
-                  <li>☀ Sol {sel.metrics.sunlightPct}%</li>
-                  <li>🌍 DTE {sel.metrics.dtePct}% ({sel.metrics.dteDegradedPct}% multipath)</li>
-                  <li>✦ Dorada {sel.metrics.goldenPct}%</li>
-                  <li>🔋 SoC mín {sel.metrics.minSocPct.toFixed(0)}%</li>
-                  <li>🌡 {sel.metrics.tempMinC}…{sel.metrics.tempMaxC} °C</li>
-                  <li>⏱ Sombra máx {sel.metrics.longestShadowH} h</li>
-                </ul>
-                <p className="mb-2 text-slate-400">{sel.metrics.viabilityReason}</p>
-                <div className="flex flex-wrap gap-1">
-                  <span className="self-center">{t("assignTo")}:</span>
-                  {SCENARIO_LABELS.filter((l) => scenarios.some((s) => s.label === l)).map((l) => (
-                    <button key={l} onClick={() => assign(l)} className="rounded px-2 py-1 font-semibold text-black" style={{ background: SCENARIO_COLORS[l] }}>{l}</button>
-                  ))}
-                  {scenarios.length < 4 && <button onClick={() => assign("new")} className="rounded bg-slate-700 px-2 py-1">+ nuevo</button>}
-                </div>
-              </>
-            ) : (
-              <p className="text-slate-400">Haz clic en una celda para ver su detalle y asignarla a un escenario. Borde amarillo = mejor celda; ✕ = riesgo de congelamiento.</p>
-            )}
-          </div>
-        </div>
+          </ul>
+          {sel && (
+            <div className="rounded border border-slate-600 p-2 text-xs text-slate-300">
+              <p className="font-semibold text-slate-100">{es ? "Celda seleccionada" : "Selected cell"}: {sel.aptitude}% · {sel.lat.toFixed(4)}°, {sel.lon.toFixed(3)}°</p>
+              <p>☀ {sel.metrics.sunlightPct}% · 🌍 {sel.metrics.dtePct}% · ✦ {sel.metrics.goldenPct}% · 🔋 {sel.metrics.minSocPct.toFixed(0)}%</p>
+              <p className="text-slate-400">{sel.metrics.viabilityReason}</p>
+              <button onClick={() => void applyCell(sel.lat, sel.lon)} className="mt-1 rounded px-2 py-0.5 font-semibold text-black" style={{ background: SCENARIO_COLORS[activeLabel] }}>
+                {es ? "Mover escenario" : "Move scenario"} {activeLabel} {es ? "aquí" : "here"}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+      {!honey && !busy && !err && (
+        <p className="text-xs text-slate-500">{es ? "Aún no hay cálculo. Prueba haciendo clic cerca del polo sur." : "No computation yet. Try clicking near the south pole."}</p>
       )}
     </section>
   );

@@ -7,6 +7,7 @@ import { effectiveStart, useMissionStore } from "@/store/useMissionStore";
 import { SCENARIO_COLORS } from "@/lib/types";
 import { buildRow, type SeasonRow } from "@/lib/seasons";
 import { useT } from "@/lib/i18n";
+import InfoTip from "@/components/ui/InfoTip";
 
 type Metric = "golden" | "sun" | "dte" | "status";
 const CELL_H = 18;
@@ -103,15 +104,26 @@ export default function SeasonsHeatmap() {
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm" id="tour-seasons">
       <div className="mb-1 flex flex-wrap items-center gap-2">
-        <h2 className="flex items-center gap-1 font-semibold text-slate-200"><CalendarRange className="h-4 w-4 text-sky-400" aria-hidden /> {t("seasonsTitle")}</h2>
-        <select className="rounded bg-slate-800 px-1 py-0.5 text-xs" value={metric} onChange={(e) => setMetric(e.target.value as Metric)} aria-label={t("metric")}>
-          <option value="status">Semáforo de viabilidad</option>
-          <option value="golden">{t("golden")} %</option>
-          <option value="sun">{t("sunlight")} %</option>
-          <option value="dte">DTE %</option>
-        </select>
+        <InfoTip k="seasons"><h2 className="flex items-center gap-1 font-semibold text-slate-200"><CalendarRange className="h-4 w-4 text-sky-400" aria-hidden /> {t("seasonsTitle")}</h2></InfoTip>
+        <div className="flex overflow-hidden rounded border border-slate-600 text-xs" role="group" aria-label={t("metric")}>
+          {([["status", "Semáforo"], ["golden", "Sol + Tierra %"]] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setMetric(k)} aria-pressed={metric === k} className={`px-2 py-0.5 ${metric === k ? "bg-slate-600" : "bg-slate-800"}`}>{l}</button>
+          ))}
+        </div>
         <label className="text-xs"><input type="checkbox" checked={allSites} onChange={(e) => setAllSites(e.target.checked)} /> {t("allSites")}</label>
-        <span className="text-[11px] text-slate-400">{t("seasonsHelp")} Misión: {missionHours} h · ▮ blanco = fecha actual</span>
+      </div>
+      <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+        <span>{t("seasonsHelp")}</span>
+        {metric === "status" ? (
+          <>
+            <span><i className="mr-1 inline-block h-2.5 w-3 bg-green-600" />Viable</span>
+            <span><i className="mr-1 inline-block h-2.5 w-3 bg-amber-600" />Requiere relé</span>
+            <span><i className="mr-1 inline-block h-2.5 w-3 bg-red-800" />Riesgo</span>
+          </>
+        ) : (
+          <span>Oscuro = poco · claro/verde = mucho</span>
+        )}
+        <span><i className="mr-1 inline-block h-2.5 w-1 bg-white" />Fecha actual</span>
       </div>
       <div className="flex gap-2">
         <div className="flex w-44 shrink-0 flex-col pt-4 text-[11px] text-slate-300">
@@ -135,7 +147,8 @@ export default function SeasonsHeatmap() {
         </div>
       </div>
       {rows.length > 0 && (
-        <div className="mt-3 overflow-x-auto">
+        <details className="mt-3 overflow-x-auto">
+          <summary className="cursor-pointer text-xs text-slate-400 hover:text-slate-200">Detalle por lunación (estaciones polares)</summary>
           <table className="w-full text-[11px] text-slate-300">
             <caption className="mb-1 text-left text-slate-400">Por lunación (≈29,5 d): % de horas con Sol / con Tierra — muestra las «estaciones» polares</caption>
             <thead>
@@ -157,7 +170,7 @@ export default function SeasonsHeatmap() {
               ))}
             </tbody>
           </table>
-        </div>
+        </details>
       )}
     </section>
   );

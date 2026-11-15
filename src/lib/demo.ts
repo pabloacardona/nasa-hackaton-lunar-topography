@@ -1,7 +1,8 @@
 // Demo narrada: secuencia guiada con voz (Web Speech API). Funciona SIN LLM ni API key — ideal para el video.
 import { useMissionStore } from "@/store/useMissionStore";
 import { useUiStore } from "@/store/useUiStore";
-import { computeHoneycomb, honeyScore } from "./honeycomb";
+import { honeyScore } from "./honeycomb";
+import { exploreAt } from "./explore";
 import { effectiveStart } from "@/store/useMissionStore";
 
 let cancelled = false;
@@ -54,16 +55,13 @@ export async function runNarratedDemo() {
     await step(["Buscamos alternativas cercanas con el panal de abeja: cada celda tiene su propio horizonte real medido por el láser LOLA.",
       "We search nearby alternatives with the honeycomb: each cell has its own real horizon measured by the LOLA laser."], async () => {
       const sc = useMissionStore.getState().getScenario("A")!;
-      const s2 = useMissionStore.getState();
-      const results = await computeHoneycomb({ center: sc, timeline: sc.timeline, startUtc: effectiveStart(sc), rings: 3, spacingKm: 2,
-        missionHours: s2.missionHours, power: s2.power, panel: sc.panelType, region: sc.region });
-      ui.setHoney({ center: "A", spacingKm: 2, results });
-    }, "tour-honeycomb");
+      await exploreAt(sc.lat, sc.lon, { label: "A", spacingKm: 2, rings: 3, moveScenario: false });
+    }, "tour-explore");
     const honey = useUiStore.getState().honey;
     const best = honey ? [...honey.results].sort((a, b) => honeyScore(b) - honeyScore(a))[0] : null;
     if (best) {
-      await step([`La mejor celda está a ${Math.hypot(best.cell.northKm, best.cell.eastKm).toFixed(1)} kilómetros, con ${best.metrics.goldenPct} por ciento de ventana dorada. La asignamos al escenario B.`,
-        `The best cell is ${Math.hypot(best.cell.northKm, best.cell.eastKm).toFixed(1)} kilometers away, with ${best.metrics.goldenPct} percent golden window. We assign it to scenario B.`], async () => {
+      await step([`La mejor celda está a ${Math.hypot(best.cell.northKm, best.cell.eastKm).toFixed(1)} kilómetros, con aptitud ${best.aptitude} de 100. La asignamos al escenario B.`,
+        `The best cell is ${Math.hypot(best.cell.northKm, best.cell.eastKm).toFixed(1)} kilometers away, with suitability ${best.aptitude} out of 100. We assign it to scenario B.`], async () => {
         if (!useMissionStore.getState().getScenario("B")) useMissionStore.getState().addScenario();
         await useMissionStore.getState().setDelay("B", 0);
         await useMissionStore.getState().setBaseDate("B", effectiveStart(useMissionStore.getState().getScenario("A")!));

@@ -4,6 +4,7 @@
 import { memo, useMemo } from "react";
 import { useMissionStore } from "@/store/useMissionStore";
 import { SCENARIO_COLORS, type Scenario } from "@/lib/types";
+import InfoTip from "@/components/ui/InfoTip";
 
 const W = 720;
 const H = 200;
@@ -53,8 +54,9 @@ export function Skyplot({ sc }: { sc: Scenario }) {
   const h = sc.timeline[hour];
   return (
     <div className="rounded-lg bg-black/60 p-1">
-      <div className="px-1 text-[11px] text-slate-400">
-        <span style={{ color: SCENARIO_COLORS[sc.label] }}>●</span> {sc.label} · {sc.siteName} — {yMin}° … {yMax}° · {sc.horizonSource}
+      <div className="flex items-center gap-2 px-1 text-[11px] text-slate-400">
+        <InfoTip k="panorama"><span><span style={{ color: SCENARIO_COLORS[sc.label] }}>●</span> {sc.label} · {sc.siteName}</span></InfoTip>
+        <span className="ml-auto">☀ <span className="text-amber-300">Sol</span> · 🌍 <span className="text-cyan-300">Tierra</span> · ⛰ montañas · rojo = oculto</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`Panorama del horizonte ${sc.label}`}>
         <StaticLayer sc={sc} yMax={yMax} />

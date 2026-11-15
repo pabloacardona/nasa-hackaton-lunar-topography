@@ -5,7 +5,7 @@
 import { hexGrid, offsetKm, type HexCell, type LatLon } from "./geo";
 import { horizonProfile, loadDem } from "./dem";
 import { transferEphem, type Ephem } from "./ephemeris";
-import { computeMetrics, crossLunarData } from "./lunarMath";
+import { aptitude, computeMetrics, crossLunarData } from "./lunarMath";
 import type { HourSample, PanelType, PowerParams, Region, ScenarioMetrics } from "./types";
 
 export interface HoneyResult {
@@ -14,6 +14,8 @@ export interface HoneyResult {
   lon: number;
   metrics: ScenarioMetrics;
   horizonMaxDeg: number;
+  /** Aptitud de aterrizaje 0-100 (ver lunarMath.aptitude) */
+  aptitude: number;
 }
 
 export function timelineToEphem(tl: HourSample[]): Ephem {
@@ -49,7 +51,8 @@ export async function computeHoneycomb(opts: {
     const profile = horizonProfile(p.lat, p.lon);
     const e = cell.ring === 0 ? base : transferEphem(base, opts.center, p);
     const tl = crossLunarData(e, profile, opts.panel, opts.startUtc, opts.power);
-    out.push({ cell, lat: p.lat, lon: p.lon, metrics: computeMetrics(tl, opts.region, opts.missionHours), horizonMaxDeg: Math.max(...profile) });
+    const metrics = computeMetrics(tl, opts.region, opts.missionHours);
+    out.push({ cell, lat: p.lat, lon: p.lon, metrics, horizonMaxDeg: Math.max(...profile), aptitude: aptitude(metrics) });
     opts.onProgress?.(i + 1, cells.length);
     if (i % 3 === 2) await new Promise((r) => setTimeout(r, 0)); // mantener la UI fluida
   }
@@ -60,6 +63,5 @@ export type HoneyMetric = "golden" | "sun" | "dte" | "minSoc";
 export const honeyValue = (r: HoneyResult, m: HoneyMetric) =>
   m === "golden" ? r.metrics.goldenPct : m === "sun" ? r.metrics.sunlightPct : m === "dte" ? r.metrics.dtePct : r.metrics.minSocPct;
 
-/** Puntaje combinado para recomendar celda: viabilidad primero, luego ventana dorada y batería. */
-export const honeyScore = (r: HoneyResult) =>
-  (r.metrics.viability === "VIABLE" ? 200 : r.metrics.viability === "RELAY_REQUIRED" ? 100 : 0) + r.metrics.goldenPct + r.metrics.minSocPct * 0.3;
+/** Puntaje para ordenar celdas = aptitud de aterrizaje. */
+export const honeyScore = (r: HoneyResult) => r.aptitude;

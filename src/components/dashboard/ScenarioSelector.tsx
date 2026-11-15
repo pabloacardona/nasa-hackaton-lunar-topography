@@ -6,6 +6,7 @@ import { SCENARIO_COLORS, type Scenario } from "@/lib/types";
 import { MISSION_PROFILES } from "@/lib/lunarMath";
 import { useGfxStore, useTier } from "@/store/useGfxStore";
 import { useT } from "@/lib/i18n";
+import InfoTip from "@/components/ui/InfoTip";
 
 function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
   const t = useT();
@@ -78,7 +79,7 @@ function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
             onChange={(e) => setBaseDate(sc.label, new Date(e.target.value + ":00Z").toISOString())} />
         </label>
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate-400">{t("delay")}: {sc.delayDays} {t("days")}</span>
+          <span className="flex items-center gap-1 text-xs text-slate-400">{t("delay")}: {sc.delayDays} {t("days")} <InfoTip k="delay" /></span>
           <div className="flex gap-1">
             <button className="rounded bg-amber-600/80 px-2 py-1 hover:bg-amber-500" onClick={() => addDelay(sc.label, 7)}>+7d</button>
             <button className="rounded bg-amber-600/80 px-2 py-1 hover:bg-amber-500" onClick={() => addDelay(sc.label, 14)}>+14d</button>
@@ -89,7 +90,7 @@ function ScenarioCard({ sc, count }: { sc: Scenario; count: number }) {
       <input type="range" min={0} max={180} value={sc.delayDays} onChange={(e) => setDelay(sc.label, Number(e.target.value))}
         className="mt-1 w-full accent-amber-500" aria-label={`${t("delay")} ${sc.label}`} />
       <p className="text-[11px] text-slate-400">
-        {t("effectiveLanding")}: {effectiveStart(sc).slice(0, 16).replace("T", " ")} UTC · {sc.lat.toFixed(3)}°, {sc.lon.toFixed(2)}°
+        <InfoTip k="horizonSource" /> {t("effectiveLanding")}: {effectiveStart(sc).slice(0, 16).replace("T", " ")} UTC · {sc.lat.toFixed(3)}°, {sc.lon.toFixed(2)}°
       </p>
       {sc.error && <p className="mt-1 text-xs text-red-400">{sc.error}</p>}
     </div>
@@ -101,10 +102,9 @@ export default function ScenarioSelector() {
   const scenarios = useMissionStore((s) => s.scenarios);
   const audienceMode = useMissionStore((s) => s.audienceMode);
   const power = useMissionStore((s) => s.power);
-  const viewMode = useMissionStore((s) => s.viewMode);
   const missionHours = useMissionStore((s) => s.missionHours);
   const lang = useMissionStore((s) => s.lang);
-  const { setAudienceMode, setPower, setViewMode, setMissionHours, addScenario, setLang } = useMissionStore.getState();
+  const { setAudienceMode, setPower, setMissionHours, addScenario, setLang } = useMissionStore.getState();
   const qualityPref = useGfxStore((s) => s.pref);
   const vfx = useGfxStore((s) => s.vfx);
   const tier = useTier();
@@ -118,11 +118,7 @@ export default function ScenarioSelector() {
           <span className="text-xs font-normal text-slate-400">{t("appSubtitle")}</span>
         </h1>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <select className="rounded bg-slate-800 px-2 py-1" value={viewMode} onChange={(e) => setViewMode(e.target.value as typeof viewMode)} aria-label={t("view")}>
-            <option value="split_3d">{t("view")}: {t("view3d")}</option>
-            <option value="horizon_panorama">{t("view")}: {t("viewPano")}</option>
-            <option value="orbital_globe">{t("view")}: {t("viewGlobe")}</option>
-          </select>
+          <InfoTip k="missionProfile" />
           <select className="rounded bg-slate-800 px-2 py-1" value={missionHours} onChange={(e) => setMissionHours(Number(e.target.value))} aria-label="Perfil de misión">
             {MISSION_PROFILES.map((p) => (
               <option key={p.hours} value={p.hours}>{lang === "es" ? p.label : p.labelEn}</option>

@@ -291,3 +291,19 @@ export function azElToVec3(az: number, el: number, r: number): [number, number, 
   const e = (el * Math.PI) / 180;
   return [r * Math.cos(e) * Math.sin(a), r * Math.sin(e), -r * Math.cos(e) * Math.cos(a)];
 }
+
+/**
+ * Aptitud de aterrizaje (0-100): índice comparativo, NO una probabilidad estadística.
+ * Base por veredicto (viable 60, relé 30, riesgo 0) + 0,3 × ventana dorada % + 0,1 × batería mínima %.
+ */
+export function aptitude(m: ScenarioMetrics): number {
+  const base = m.viability === "VIABLE" ? 60 : m.viability === "RELAY_REQUIRED" ? 30 : 0;
+  return Math.round(Math.min(100, base + 0.3 * m.goldenPct + 0.1 * m.minSocPct));
+}
+
+/** Color de aptitud (rojo -> ámbar -> verde) */
+export function aptitudeColor(a: number): string {
+  const t = Math.max(0, Math.min(1, a / 100));
+  const hue = t * 125; // 0 rojo, 125 verde
+  return `hsl(${hue.toFixed(0)}, 75%, ${(30 + t * 12).toFixed(0)}%)`;
+}

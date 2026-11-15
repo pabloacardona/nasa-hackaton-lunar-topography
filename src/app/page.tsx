@@ -38,7 +38,6 @@ export default function Home() {
   const t = useT();
   const loadDataset = useMissionStore((s) => s.loadDataset);
   const isPlaying = useMissionStore((s) => s.isPlaying);
-  const viewMode = useMissionStore((s) => s.viewMode);
   const demoRunning = useUiStore((s) => s.demoRunning);
   const { setTourStep, openBrief } = useUiStore.getState();
 
@@ -76,16 +75,18 @@ export default function Home() {
         <button onClick={() => openBrief(generateMissionBrief())} className="flex items-center gap-1 rounded bg-slate-800 px-3 py-1.5 hover:bg-slate-700"><FileText className="h-4 w-4" /> {t("brief")}</button>
       </div>
       <EducatorOverlay />
-      {viewMode === "split_3d" && <LocalHorizon3D />}
-      {viewMode === "orbital_globe" && <LunarGlobe3D />}
+      <section id="tour-explore" className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+        <div className="xl:col-span-2"><LunarGlobe3D /></div>
+        <div className="flex flex-col gap-3">
+          <HoneycombPanel />
+          <PolarMap />
+        </div>
+      </section>
+      <LocalHorizon3D />
       <HorizonSkyplot2D />
       <MetricsComparison />
       <LunarTimelineGantt />
       <EnergyThermalChart />
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <HoneycombPanel />
-        <PolarMap />
-      </div>
       <SeasonsHeatmap />
       <EarthVsMoon />
       <footer className="pb-16 text-[11px] text-slate-500">

@@ -66,6 +66,7 @@ interface MissionState {
   removeScenario: (label: ScenarioLabel) => void;
   setActive: (label: ScenarioLabel) => void;
   toggleView3d: (label: ScenarioLabel) => void;
+  showAll3d: () => void;
   setSite: (label: ScenarioLabel, siteId: string) => Promise<void>;
   setCustomCoords: (label: ScenarioLabel, lat: number, lon: number, name?: string) => Promise<void>;
   setBaseDate: (label: ScenarioLabel, iso: string) => Promise<void>;
@@ -178,8 +179,10 @@ export const useMissionStore = create<MissionState>((set, get) => {
       set((st) => {
         if (st.view3d.includes(label)) return st.view3d.length > 1 ? { view3d: st.view3d.filter((l) => l !== label) } : {};
         const next = [...st.view3d, label];
-        return { view3d: next.slice(-2) }; // máximo 2 vistas 3D simultáneas (rendimiento)
+        return { view3d: next.slice(-4) }; // hasta 4 vistas 3D (con 3-4 se usa modo compacto)
       }),
+
+    showAll3d: () => set((st) => ({ view3d: st.scenarios.map((s) => s.label) })),
 
     setSite: async (label, siteId) => {
       const site = get().getSite(siteId);
@@ -303,7 +306,7 @@ export const useMissionStore = create<MissionState>((set, get) => {
           if (!res.ok) throw new Error(json.error ?? res.statusText);
           e = fromAzEl(json.sun, json.earth);
         } catch (err) {
-          patch(label, { loading: false, error: `JPL Horizons no disponible: ${String(err)}` });
+          patch(label, { loading: false, timeline: [], metrics: null, source: "none", error: `JPL Horizons no disponible: ${String(err)}` });
           return;
         }
       }

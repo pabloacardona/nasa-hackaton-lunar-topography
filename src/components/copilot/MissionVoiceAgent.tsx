@@ -12,7 +12,8 @@ import { effectiveStart, useMissionStore, type EventType } from "@/store/useMiss
 import { useUiStore } from "@/store/useUiStore";
 import type { Scenario, ScenarioLabel } from "@/lib/types";
 import { bestWindowsForScenario } from "@/lib/seasons";
-import { computeHoneycomb, honeyScore } from "@/lib/honeycomb";
+import { honeyScore } from "@/lib/honeycomb";
+import { exploreAt } from "@/lib/explore";
 import { generateMissionBrief } from "@/lib/brief";
 import { runNarratedDemo } from "@/lib/demo";
 import { ApprovalCard, ScenarioCompareCard, WindowsCard } from "./ChatCards";
@@ -59,7 +60,7 @@ export default function MissionVoiceAgent() {
   useCopilotReadable({
     description: "Resultado del último análisis de panal de abeja (puntos cercanos)",
     value: honey ? { center: honey.center, spacingKm: honey.spacingKm, cells: honey.results.length,
-      best: [...honey.results].sort((a, b) => honeyScore(b) - honeyScore(a)).slice(0, 3).map((r) => ({ lat: r.lat, lon: r.lon, northKm: r.cell.northKm, eastKm: r.cell.eastKm, ...r.metrics })) } : null,
+      best: [...honey.results].sort((a, b) => honeyScore(b) - honeyScore(a)).slice(0, 3).map((r) => ({ lat: r.lat, lon: r.lon, northKm: r.cell.northKm, eastKm: r.cell.eastKm, aptitude: r.aptitude, ...r.metrics })) } : null,
   });
 
   useCopilotChatSuggestions(
@@ -189,18 +190,16 @@ export default function MissionVoiceAgent() {
     description: "Análisis de sensibilidad con panal de abeja alrededor de un escenario: evalúa puntos a 0,5–5 km con su horizonte real.",
     parameters: [
       { name: "scenario", type: "string", enum: LABELS, description: "Escenario centro", required: true },
-      { name: "spacingKm", type: "number", description: "Separación (0.5, 1, 2 o 5 km)", required: false },
+      { name: "spacingKm", type: "number", description: "Separación (1, 2 o 5 km)", required: false },
       { name: "rings", type: "number", description: "Anillos (2-4)", required: false },
     ],
     handler: async ({ scenario, spacingKm, rings }) => {
       const sc = store().getScenario(scenario as ScenarioLabel);
       if (!sc?.timeline.length) return "Escenario sin datos";
-      const results = await computeHoneycomb({ center: sc, timeline: sc.timeline, startUtc: effectiveStart(sc), rings: rings ?? 3, spacingKm: spacingKm ?? 1,
-        missionHours: store().missionHours, power: store().power, panel: sc.panelType, region: sc.region });
-      useUiStore.getState().setHoney({ center: sc.label, spacingKm: spacingKm ?? 1, results });
-      document.getElementById("tour-honeycomb")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      const best = [...results].sort((a, b) => honeyScore(b) - honeyScore(a)).slice(0, 3);
-      return JSON.stringify(best.map((r) => ({ lat: r.lat, lon: r.lon, northKm: r.cell.northKm, eastKm: r.cell.eastKm, goldenPct: r.metrics.goldenPct, sunlightPct: r.metrics.sunlightPct, viability: r.metrics.viability })));
+      document.getElementById("tour-explore")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const ranked = await exploreAt(sc.lat, sc.lon, { label: sc.label, spacingKm: spacingKm ?? 2, rings: rings ?? 3, moveScenario: false });
+      if (!ranked) return "No se pudo calcular el panal";
+      return JSON.stringify(ranked.slice(0, 3).map((r) => ({ lat: r.lat, lon: r.lon, northKm: r.cell.northKm, eastKm: r.cell.eastKm, aptitude: r.aptitude, goldenPct: r.metrics.goldenPct, sunlightPct: r.metrics.sunlightPct, viability: r.metrics.viability })));
     },
   });
 
@@ -251,7 +250,7 @@ export default function MissionVoiceAgent() {
 
   useCopilotAction({
     name: "setUiOptions",
-    description: "Cambia modo (engineer/educator), vista (split_3d/orbital_globe/horizon_panorama), idioma (es/en) o inicia el tour.",
+    description: "Cambia modo (engineer/educator), lleva a una vista (split_3d = horizontes 3D, orbital_globe = Luna con panal, horizon_panorama), idioma (es/en) o inicia el tour.",
     parameters: [
       { name: "audienceMode", type: "string", enum: ["engineer", "educator"], description: "Modo", required: false },
       { name: "viewMode", type: "string", enum: ["split_3d", "orbital_globe", "horizon_panorama"], description: "Vista", required: false },
@@ -260,7 +259,10 @@ export default function MissionVoiceAgent() {
     ],
     handler: async ({ audienceMode, viewMode, language, startTour }) => {
       if (audienceMode) store().setAudienceMode(audienceMode as "engineer");
-      if (viewMode) store().setViewMode(viewMode as "split_3d");
+      if (viewMode) {
+        const id = viewMode === "orbital_globe" ? "tour-globe" : viewMode === "horizon_panorama" ? "tour-panorama" : "tour-3d";
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       if (language) store().setLang(language as "es");
       if (startTour) useUiStore.getState().setTourStep(0);
       return "OK";
