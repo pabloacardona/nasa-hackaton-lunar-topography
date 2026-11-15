@@ -309,8 +309,21 @@ export const useMissionStore = create<MissionState>((set, get) => {
           if (!res.ok) throw new Error(json.error ?? res.statusText);
           e = fromAzEl(json.sun, json.earth);
         } catch (err) {
-          patch(label, { loading: false, timeline: [], metrics: null, source: "none", error: `JPL Horizons no disponible: ${String(err)}` });
-          return;
+          // Respaldo sin red: efeméride en caché del sitio curado más cercano, desplazada a la fecha pedida
+          const sites = ds.sites.filter((x) => st.ephem[x.id]);
+          let best: (typeof sites)[number] | undefined;
+          let bd = Infinity;
+          for (const x of sites) {
+            const d = (x.lat - sc.lat) ** 2 + (x.lon - sc.lon) ** 2;
+            if (d < bd) { bd = d; best = x; }
+          }
+          if (!best) {
+            patch(label, { loading: false, timeline: [], metrics: null, source: "none", error: `JPL Horizons no disponible: ${String(err)}` });
+            return;
+          }
+          const o = Math.min(Math.max(offset, 0), ds.hours - WINDOW_HOURS);
+          e = transferEphem(sliceEphem(st.ephem[best.id], o, WINDOW_HOURS), best, sc);
+          source = "transfer";
         }
       }
       const cur = get().getScenario(label);
